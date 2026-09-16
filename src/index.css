@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens — semantic CSS custom properties (not hardcoded Tailwind
+ * color classes), following the same shared-project convention as every
+ * sibling app: components read `bg-[var(--surface)]` / `text-[var(--text)]`
+ * instead of `bg-white dark:bg-slate-900`.
+ *
+ * Palette: "Kunyit & Daun" (turmeric gold + deep teal) — a deliberate,
+ * hand-tuned scale rather than a single-hue formulaic ramp, chosen to read
+ * as a warm Indonesian food/retail brand rather than generic SaaS (no
+ * cream+serif+terracotta, no purple-blue gradient, no Inter-as-default).
+ */
+:root {
+  color-scheme: light;
+
+  --brand-50: #fff8e8;
+  --brand-100: #ffedc2;
+  --brand-200: #ffdd8a;
+  --brand-300: #ffc750;
+  --brand-400: #f7ae2b;
+  --brand-500: #e89416;
+  --brand-600: #c77609;
+  --brand-700: #9c5a08;
+
+  --accent-50: #e3f5f1;
+  --accent-100: #bfe8df;
+  --accent-400: #12856e;
+  --accent-500: #0e6e5b;
+  --accent-600: #0a5647;
+  --accent-700: #073f34;
+
+  --bg: #fff6e9;
+  --surface: #fffbf3;
+  --surface-raised: #ffffff;
+  --text: #241b14;
+  --text-secondary: #6b5c4c;
+  --text-faint: #9c8b78;
+  --border: #f0ddc0;
+  --border-soft: #f7ead2;
+
+  --success-bg: var(--accent-50);
+  --success-text: var(--accent-700);
+  --warning-bg: var(--brand-100);
+  --warning-text: var(--brand-700);
+  --error-bg: #fbe4e2;
+  --error-text: #a12f26;
+  --danger: #d64545;
+
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Shape language: ticket-notch primary CTAs, pill chips, asymmetric cards. */
+  --shape-notch: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  --shape-card: 4px 20px 4px 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #16110c;
+    --surface: #201811;
+    --surface-raised: #291f16;
+    --text: #fdf3e4;
+    --text-secondary: #cbb89e;
+    --text-faint: #8c7a63;
+    --border: #3a2c1c;
+    --border-soft: #2e2316;
+    --success-bg: #103d33;
+    --success-text: #6fd9c1;
+    --warning-bg: #3d2c0f;
+    --warning-text: #ffcb6b;
+    --error-bg: #3d1613;
+    --error-text: #ff9a90;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #16110c;
+  --surface: #201811;
+  --surface-raised: #291f16;
+  --text: #fdf3e4;
+  --text-secondary: #cbb89e;
+  --text-faint: #8c7a63;
+  --border: #3a2c1c;
+  --border-soft: #2e2316;
+  --success-bg: #103d33;
+  --success-text: #6fd9c1;
+  --warning-bg: #3d2c0f;
+  --warning-text: #ffcb6b;
+  --error-bg: #3d1613;
+  --error-text: #ff9a90;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+}
+
+.font-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Primary CTA shape — receipt-stub notch, not a plain rounded rectangle. */
+.shape-notch {
+  clip-path: var(--shape-notch);
+}
+
+/* Product/stat/receipt card shape — single-diagonal asymmetric rounding. */
+.shape-card {
+  border-radius: var(--shape-card);
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@supports not (env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: 0.5rem;
+  }
+}
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Universal browser-print fallback (no RawBT needed) — hides everything
+   on the page except the #receipt element (see ReceiptView.tsx). */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt, #receipt * {
+    visibility: visible;
+  }
+  #receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
