@@ -8,8 +8,9 @@ import type { Transaksi } from "../../types";
 export function ReceiptPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings, plan } = useSettings();
   const transaksi = (location.state as { transaksi?: Transaksi } | null)?.transaksi;
+  const watermark = plan === "gratis";
 
   if (!transaksi) {
     return (
@@ -22,8 +23,8 @@ export function ReceiptPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <ReceiptView t={transaksi} p={settings} />
-      <ReceiptActions t={transaksi} p={settings} />
+      <ReceiptView t={transaksi} p={settings} watermark={watermark} />
+      <ReceiptActions t={transaksi} p={settings} watermark={watermark} />
       <Button onClick={() => navigate("/kasir")} variant="ghost" fullWidth>
         Transaksi Baru
       </Button>

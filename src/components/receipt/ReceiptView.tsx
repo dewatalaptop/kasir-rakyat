@@ -4,7 +4,7 @@ import { formatDateTime, formatRupiah } from "../../lib/format";
 
 // Scoped for @media print via the #receipt id (see index.css) — the
 // universal browser/desktop print fallback needing no app at all.
-export function ReceiptView({ t, p }: { t: Transaksi; p: Pengaturan }) {
+export function ReceiptView({ t, p, watermark = false }: { t: Transaksi; p: Pengaturan; watermark?: boolean }) {
   return (
     <div id="receipt" className="font-tabular mx-auto max-w-xs bg-white p-4 text-[13px] text-black">
       <p className="text-center font-display text-base font-extrabold">{p.businessName || "Kasir Rakyat"}</p>
@@ -60,6 +60,7 @@ export function ReceiptView({ t, p }: { t: Transaksi; p: Pengaturan }) {
       )}
       <div className="my-2 border-t border-dashed border-black" />
       {p.receiptFooterText && <p className="text-center text-[11px]">{p.receiptFooterText}</p>}
+      {watermark && <p className="mt-1 text-center text-[10px] text-gray-500">Dibuat dengan Kasir Rakyat (gratis)</p>}
     </div>
   );
 }

@@ -5,12 +5,12 @@ import { PrinterIcon } from "../ui/icons";
 import { copyReceiptToClipboard, printViaBrowser, printViaRawBT } from "../../lib/printing";
 import { useToast } from "../ui/Toast";
 
-export function ReceiptActions({ t, p }: { t: Transaksi; p: Pengaturan }) {
+export function ReceiptActions({ t, p, watermark = false }: { t: Transaksi; p: Pengaturan; watermark?: boolean }) {
   const [showFallback, setShowFallback] = useState(false);
   const { show } = useToast();
 
   function handleRawBT() {
-    printViaRawBT(t, p);
+    printViaRawBT(t, p, watermark);
     // RawBT either opens (leaving this page) or silently does nothing if
     // not installed — give the cashier a manual fallback after a short
     // wait rather than leaving them stuck with no feedback.
@@ -19,7 +19,7 @@ export function ReceiptActions({ t, p }: { t: Transaksi; p: Pengaturan }) {
 
   async function handleCopy() {
     try {
-      await copyReceiptToClipboard(t, p);
+      await copyReceiptToClipboard(t, p, watermark);
       show("Teks struk disalin — tempel di RawBT secara manual.", "success");
     } catch {
       show("Gagal menyalin ke clipboard.", "error");

@@ -203,5 +203,6 @@ export function settingsRowsToObject(rows: string[][]): Partial<Pengaturan> {
   if (map.printer_pref !== undefined) out.printerPref = map.printer_pref as Pengaturan["printerPref"];
   if (map.onboarding_completed !== undefined) out.onboardingCompleted = isTrue(map.onboarding_completed);
   if (map.sheet_created_at !== undefined) out.sheetCreatedAt = map.sheet_created_at;
+  if (map.admin_password_hash !== undefined) out.adminPasswordHash = map.admin_password_hash;
   return out;
 }

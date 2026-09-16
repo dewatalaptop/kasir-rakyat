@@ -64,6 +64,9 @@ export interface Pengaturan {
   printerPref: "rawbt" | "browser";
   onboardingCompleted: boolean;
   sheetCreatedAt: string;
+  // SHA-256 hex hash, never the plaintext password itself — empty/absent
+  // means no admin password has been set up yet (see AdminAuthGuard).
+  adminPasswordHash: string;
 }
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {

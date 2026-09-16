@@ -3,8 +3,11 @@ import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
 import { getTransaksi } from "../../lib/sheetsStore";
 import { formatRupiah } from "../../lib/format";
+import { limitsFor } from "../../lib/limits";
 import { Card } from "../../components/ui/Card";
 import { Spinner } from "../../components/ui/Spinner";
+import { LockIcon } from "../../components/ui/icons";
+import { useToast } from "../../components/ui/Toast";
 
 const RANGE_OPTIONS = [
   { key: "7", label: "7 Hari" },
@@ -13,9 +16,11 @@ const RANGE_OPTIONS = [
 ];
 
 export function ReportsPage() {
-  const { accessToken, spreadsheetId } = useSettings();
+  const { accessToken, spreadsheetId, plan } = useSettings();
+  const { show } = useToast();
   const [rangeDays, setRangeDays] = useState("7");
   const { data, loading } = useSheetsData(accessToken && spreadsheetId ? () => getTransaksi(accessToken, spreadsheetId) : null, [accessToken, spreadsheetId]);
+  const allowedDays = limitsFor(plan).laporanDayOptions;
 
   const report = useMemo(() => {
     const cutoff = Date.now() - Number(rangeDays) * 86400000;
@@ -35,18 +40,32 @@ export function ReportsPage() {
     <div className="flex flex-col gap-4">
       <h1 className="font-display text-lg font-bold text-[var(--text)]">Laporan</h1>
       <div className="flex gap-2">
-        {RANGE_OPTIONS.map((r) => (
-          <button
-            key={r.key}
-            type="button"
-            onClick={() => setRangeDays(r.key)}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
-              rangeDays === r.key ? "bg-[var(--brand-500)] text-white" : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]"
-            }`}
-          >
-            {r.label}
-          </button>
-        ))}
+        {RANGE_OPTIONS.map((r) => {
+          const locked = !allowedDays.includes(Number(r.key));
+          return (
+            <button
+              key={r.key}
+              type="button"
+              onClick={() => {
+                if (locked) {
+                  show("Rentang laporan lebih panjang hanya untuk versi berbayar. Hubungi kami untuk upgrade.", "error");
+                  return;
+                }
+                setRangeDays(r.key);
+              }}
+              className={`flex items-center gap-1 rounded-full px-4 py-1.5 text-xs font-semibold ${
+                rangeDays === r.key
+                  ? "bg-[var(--brand-500)] text-white"
+                  : locked
+                    ? "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-faint)]"
+                    : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]"
+              }`}
+            >
+              {locked && <LockIcon size={12} />}
+              {r.label}
+            </button>
+          );
+        })}
       </div>
       {loading ? (
         <div className="flex justify-center py-8 text-[var(--brand-500)]">

@@ -23,7 +23,7 @@ export function MorePage() {
       <Button onClick={() => navigate("/admin")} variant="ghost" fullWidth icon={<SettingsIcon size={18} />}>
         Buka Mode Admin
       </Button>
-      <Button onClick={() => navigate("/admin/bantuan")} variant="ghost" fullWidth icon={<HelpIcon size={18} />}>
+      <Button onClick={() => navigate("/bantuan")} variant="ghost" fullWidth icon={<HelpIcon size={18} />}>
         Bantuan
       </Button>
       <Button

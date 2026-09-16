@@ -36,8 +36,10 @@ function wrapLine(text: string): string[] {
 }
 
 // Plain 32-column monospace receipt text — used by both the RawBT intent
-// URL and the copy-to-clipboard fallback in printing.ts.
-export function buildReceiptText(t: Transaksi, p: Pengaturan): string {
+// URL and the copy-to-clipboard fallback in printing.ts. `watermark` is
+// the free-plan receipt line (see src/lib/limits.ts) — a real, server-
+// verified plan status, not something this app can silently opt out of.
+export function buildReceiptText(t: Transaksi, p: Pengaturan, watermark = false): string {
   const lines: string[] = [];
   lines.push(center(p.businessName || "Kasir Rakyat"));
   if (p.address) wrapLine(p.address).forEach((l) => lines.push(center(l)));
@@ -62,6 +64,7 @@ export function buildReceiptText(t: Transaksi, p: Pengaturan): string {
   if (t.kembalian !== null) lines.push(twoCol("Kembali", formatRupiah(t.kembalian)));
   lines.push(sep());
   if (p.receiptFooterText) wrapLine(p.receiptFooterText).forEach((l) => lines.push(center(l)));
+  if (watermark) lines.push(center("Dibuat dengan Kasir Rakyat (gratis)"));
   lines.push("");
   lines.push("");
   return lines.join("\n");

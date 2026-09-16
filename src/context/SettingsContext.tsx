@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { connectGoogleSheets, getStoredAccessToken } from "../lib/sheets";
 import { ensureAppSpreadsheet, getSettings, setSettings as saveSettings } from "../lib/sheetsStore";
+import { checkLicense, type PlanStatus } from "../lib/license";
+import { useAuth } from "../hooks/useAuth";
 import type { Pengaturan } from "../types";
 
 const SPREADSHEET_ID_KEY = "kasirRakyat.spreadsheetId";
@@ -18,6 +20,7 @@ const DEFAULT_SETTINGS: Pengaturan = {
   printerPref: "rawbt",
   onboardingCompleted: false,
   sheetCreatedAt: "",
+  adminPasswordHash: "",
 };
 
 interface SettingsContextValue {
@@ -31,6 +34,13 @@ interface SettingsContextValue {
   refresh: () => Promise<void>;
   updateSettings: (patch: Partial<Record<string, string>>) => Promise<void>;
   reconnect: () => Promise<void>;
+  // Real plan status — checked server-side against Studio's own payment
+  // records (see src/lib/license.ts), not something this app can set
+  // itself. Defaults to "gratis" while the check is in flight or on
+  // failure — never fail open into paid features.
+  plan: PlanStatus;
+  planExpiresAt: string | null;
+  planLoading: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -42,11 +52,15 @@ export function useSettings(): SettingsContextValue {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [accessToken, setAccessToken] = useState<string | null>(getStoredAccessToken());
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(localStorage.getItem(SPREADSHEET_ID_KEY));
   const [settings, setSettingsState] = useState<Pengaturan>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [plan, setPlan] = useState<PlanStatus>("gratis");
+  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
+  const [planLoading, setPlanLoading] = useState(true);
 
   const loadSettings = useCallback(async (token: string, sheetId: string) => {
     const partial = await getSettings(token, sheetId);
@@ -66,6 +80,25 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Only fires once a real signed-in user exists (the httpsCallable
+  // needs a valid ID token) — this is independent of the Sheets
+  // connection above, so plan status resolves even before onboarding.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const result = await checkLicense();
+      if (!cancelled) {
+        setPlan(result.plan);
+        setPlanExpiresAt(result.expiresAt);
+        setPlanLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const connect = useCallback(async (businessName = "") => {
     setError(null);
@@ -110,6 +143,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         connect,
         refresh,
         updateSettings,
+        plan,
+        planExpiresAt,
+        planLoading,
         reconnect,
       }}
     >

@@ -6,12 +6,14 @@ import {
   HelpIcon,
   HomeIcon,
   ListIcon,
+  LockIcon,
   LogoutIcon,
   ReceiptIcon,
   SettingsIcon,
   WalletIcon,
 } from "../ui/icons";
 import { signOutUser } from "../../lib/auth";
+import { clearAdminUnlocked } from "../../lib/adminAuth";
 
 const ITEMS = [
   { to: "/admin", label: "Dashboard", icon: HomeIcon, end: true },
@@ -20,7 +22,7 @@ const ITEMS = [
   { to: "/admin/transaksi", label: "Transaksi", icon: ReceiptIcon },
   { to: "/admin/laporan", label: "Laporan", icon: ChartIcon },
   { to: "/admin/pengaturan", label: "Pengaturan", icon: SettingsIcon },
-  { to: "/admin/bantuan", label: "Bantuan", icon: HelpIcon },
+  { to: "/bantuan", label: "Bantuan", icon: HelpIcon },
   { to: "/admin/akun", label: "Akun", icon: WalletIcon },
 ];
 
@@ -64,6 +66,17 @@ export function AdminDrawer({ open, onClose }: { open: boolean; onClose: () => v
             </NavLink>
           ))}
         </nav>
+        <button
+          type="button"
+          onClick={() => {
+            clearAdminUnlocked();
+            navigate("/kasir");
+          }}
+          className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--border-soft)]"
+        >
+          <LockIcon size={20} />
+          Kunci Admin
+        </button>
         <button
           type="button"
           onClick={async () => {

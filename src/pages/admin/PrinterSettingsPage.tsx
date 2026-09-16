@@ -28,7 +28,7 @@ const SAMPLE_TRANSAKSI: Transaksi = {
 };
 
 export function PrinterSettingsPage() {
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateSettings, plan } = useSettings();
   const [busy, setBusy] = useState(false);
 
   async function handlePrefChange(pref: "rawbt" | "browser") {
@@ -72,7 +72,7 @@ export function PrinterSettingsPage() {
       </div>
       <div className="flex flex-col gap-2 border-t border-[var(--border-soft)] pt-3">
         <p className="text-xs font-semibold text-[var(--text-secondary)]">Tes Cetak Struk Contoh</p>
-        <Button onClick={() => printViaRawBT(SAMPLE_TRANSAKSI, settings)} variant="ghost" fullWidth>
+        <Button onClick={() => printViaRawBT(SAMPLE_TRANSAKSI, settings, plan === "gratis")} variant="ghost" fullWidth>
           Tes via RawBT
         </Button>
         <Button onClick={printViaBrowser} variant="ghost" fullWidth>

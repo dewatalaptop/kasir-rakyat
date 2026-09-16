@@ -4,6 +4,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../components/ui/Toast";
 import { BUSINESS_TYPES } from "../../lib/businessType";
+import { hashPassword } from "../../lib/adminAuth";
 
 export function SettingsPage() {
   const { settings, updateSettings } = useSettings();
@@ -118,6 +119,77 @@ export function SettingsPage() {
           Pengaturan Printer
         </Button>
       </div>
+      <ChangePasswordForm />
     </div>
+  );
+}
+
+function ChangePasswordForm() {
+  const { settings, updateSettings } = useSettings();
+  const { show } = useToast();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (next.length < 4) {
+      show("Password baru minimal 4 karakter.", "error");
+      return;
+    }
+    if (next !== confirm) {
+      show("Konfirmasi password baru tidak cocok.", "error");
+      return;
+    }
+    setBusy(true);
+    try {
+      const currentHash = await hashPassword(current);
+      if (currentHash !== settings.adminPasswordHash) {
+        show("Password saat ini salah.", "error");
+        return;
+      }
+      const nextHash = await hashPassword(next);
+      await updateSettings({ admin_password_hash: nextHash });
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+      show("Password admin diperbarui.", "success");
+    } catch (err) {
+      show(err instanceof Error ? err.message : "Gagal mengubah password.", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 border-t border-[var(--border-soft)] pt-3">
+      <h2 className="font-display text-sm font-bold text-[var(--text)]">Keamanan</h2>
+      <p className="text-xs text-[var(--text-secondary)]">Ubah password admin — ini yang memisahkan mode Kasir dari menu Admin.</p>
+      <input
+        type="password"
+        value={current}
+        onChange={(e) => setCurrent(e.target.value)}
+        placeholder="Password saat ini"
+        className="shape-card border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm"
+      />
+      <input
+        type="password"
+        value={next}
+        onChange={(e) => setNext(e.target.value)}
+        placeholder="Password baru"
+        className="shape-card border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm"
+      />
+      <input
+        type="password"
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
+        placeholder="Ulangi password baru"
+        className="shape-card border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm"
+      />
+      <Button type="submit" disabled={busy || !current || !next || !confirm} variant="secondary" fullWidth>
+        {busy ? "Menyimpan..." : "Ubah Password Admin"}
+      </Button>
+    </form>
   );
 }

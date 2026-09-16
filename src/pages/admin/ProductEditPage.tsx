@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
 import { getKategori, getProduk, saveProduk } from "../../lib/sheetsStore";
+import { limitsFor } from "../../lib/limits";
 import { ProductForm } from "../../components/admin/ProductForm";
 import { Spinner } from "../../components/ui/Spinner";
 import { useToast } from "../../components/ui/Toast";
@@ -10,7 +11,7 @@ import type { Produk } from "../../types";
 
 export function ProductEditPage() {
   const { id } = useParams();
-  const { accessToken, spreadsheetId } = useSettings();
+  const { accessToken, spreadsheetId, plan } = useSettings();
   const navigate = useNavigate();
   const { show } = useToast();
   const [busy, setBusy] = useState(false);
@@ -23,6 +24,18 @@ export function ProductEditPage() {
 
   async function handleSubmit(data: Omit<Produk, "id" | "createdAt" | "updatedAt">) {
     if (!accessToken || !spreadsheetId) return;
+    // Defense in depth: ProductsPage already blocks the "+ Tambah" nav at
+    // the cap, this re-checks in case someone navigates here directly.
+    // Only new products are capped — existing ones stay editable
+    // regardless of plan.
+    if (!id) {
+      const existing = await getProduk(accessToken, spreadsheetId);
+      const activeCount = existing.filter((p) => p.status === "aktif").length;
+      if (activeCount >= limitsFor(plan).maxProduk) {
+        show(`Batas ${limitsFor(plan).maxProduk} produk aktif untuk versi gratis. Hubungi kami untuk upgrade.`, "error");
+        return;
+      }
+    }
     setBusy(true);
     try {
       const now = new Date().toISOString();

@@ -7,8 +7,8 @@ import { buildReceiptText } from "./receipt";
 // BLE pairing is a later Android (Capacitor) milestone, not v1 — this is
 // the deliberate extension point for it (see plan: "Explicitly out of
 // scope for v1").
-export function printViaRawBT(t: Transaksi, p: Pengaturan): void {
-  const text = buildReceiptText(t, p);
+export function printViaRawBT(t: Transaksi, p: Pengaturan, watermark = false): void {
+  const text = buildReceiptText(t, p, watermark);
   const url = `rawbt://print?text=${encodeURIComponent(text)}`;
   const link = document.createElement("a");
   link.href = url;
@@ -18,8 +18,8 @@ export function printViaRawBT(t: Transaksi, p: Pengaturan): void {
   document.body.removeChild(link);
 }
 
-export async function copyReceiptToClipboard(t: Transaksi, p: Pengaturan): Promise<void> {
-  const text = buildReceiptText(t, p);
+export async function copyReceiptToClipboard(t: Transaksi, p: Pengaturan, watermark = false): Promise<void> {
+  const text = buildReceiptText(t, p, watermark);
   await navigator.clipboard.writeText(text);
 }
 

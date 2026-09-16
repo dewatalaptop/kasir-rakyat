@@ -25,6 +25,21 @@ itu sendiri.
 - **Stok**: `stokTampilan` per produk murni informasi manual (badge "sisa
   X"), tidak ada pengurangan stok otomatis atau pencegahan oversell — di
   luar cakupan versi ini.
+- **Akses Admin vs Kasir**: `/kasir/*` dan `/bantuan` tidak butuh password
+  tambahan — hanya login Google. `/admin/*` (Produk, Kategori, Transaksi,
+  Laporan, Pengaturan, Akun) dijaga `AdminAuthGuard`
+  (`src/components/auth/AdminAuthGuard.tsx`) dengan password terpisah
+  (hash SHA-256, tersimpan di Pengaturan, diubah kapan saja lewat
+  Pengaturan > Keamanan). Ini pemisah untuk kasir yang memakai perangkat
+  sama dengan akun Google pemilik, **bukan** pengganti keamanan
+  server-side — aplikasi ini tidak punya backend sendiri, jadi tidak
+  tahan terhadap pengguna yang benar-benar teknis.
+- **Gratis vs Berbayar**: status langganan dicek nyata lewat
+  `checkStudioLicense` (Cloud Function di project `ai-app-builder-7bf8e`,
+  lihat `src/lib/license.ts`) terhadap catatan pembayaran Studio asli —
+  bukan sesuatu yang bisa diubah sendiri dari aplikasi ini. Batasan versi
+  gratis ada di `src/lib/limits.ts` (maks 20 produk aktif, laporan 7
+  hari, watermark di struk).
 
 ## Setup
 

@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFunctions } from "firebase/functions";
 
 // New projects built via this AI App Builder default to the SAME shared
 // Firebase project (ai-app-builder-7bf8e) rather than provisioning a fresh
@@ -27,3 +28,7 @@ const firebaseApp = initializeApp({
 
 export const firebaseAuth = getAuth(firebaseApp);
 export const googleProvider = new GoogleAuthProvider();
+// Same shared project as everything above — calling a Cloud Function here
+// (e.g. checkStudioLicense) needs no separate config, just the signed-in
+// user's existing ID token from firebaseAuth.
+export const functions = getFunctions(firebaseApp);

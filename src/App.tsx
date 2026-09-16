@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { RouteGuard } from "./components/auth/RouteGuard";
 import { OnboardingGuard } from "./components/auth/OnboardingGuard";
+import { AdminAuthGuard } from "./components/auth/AdminAuthGuard";
 import { CashierLayout } from "./components/layout/CashierLayout";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import { LoginPage } from "./pages/LoginPage";
@@ -46,6 +47,17 @@ export default function App() {
               <Route element={<RouteGuard />}>
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route element={<OnboardingGuard />}>
+                  {/*
+                    Access boundary:
+                    - Kasir, no password: /kasir/* (Kasir, Keranjang, Bayar,
+                      Struk, Riwayat hari ini, Lainnya) and the shared
+                      /bantuan — every user, including a kasir with no admin
+                      password, can reach these.
+                    - Admin, password-gated (AdminAuthGuard below): /admin/*
+                      — Dashboard, Produk, Kategori, Transaksi (+ detail +
+                      batalkan), Laporan, Pengaturan (+ Sheets + Printer +
+                      Keamanan/password), Akun.
+                  */}
                   <Route path="/kasir" element={<CashierLayout />}>
                     <Route index element={<CatalogPage />} />
                     <Route path="keranjang" element={<CartPage />} />
@@ -54,20 +66,22 @@ export default function App() {
                     <Route path="riwayat" element={<TodayHistoryPage />} />
                     <Route path="lainnya" element={<MorePage />} />
                   </Route>
-                  <Route path="/admin" element={<AdminLayout />}>
-                    <Route index element={<DashboardPage />} />
-                    <Route path="produk" element={<ProductsPage />} />
-                    <Route path="produk/baru" element={<ProductEditPage />} />
-                    <Route path="produk/:id/edit" element={<ProductEditPage />} />
-                    <Route path="kategori" element={<CategoriesPage />} />
-                    <Route path="transaksi" element={<TransactionsPage />} />
-                    <Route path="transaksi/:id" element={<TransactionDetailPage />} />
-                    <Route path="laporan" element={<ReportsPage />} />
-                    <Route path="pengaturan" element={<SettingsPage />} />
-                    <Route path="pengaturan/sheets" element={<SheetsSettingsPage />} />
-                    <Route path="pengaturan/printer" element={<PrinterSettingsPage />} />
-                    <Route path="bantuan" element={<HelpPage />} />
-                    <Route path="akun" element={<AccountPage />} />
+                  <Route path="/bantuan" element={<HelpPage />} />
+                  <Route path="/admin" element={<AdminAuthGuard />}>
+                    <Route element={<AdminLayout />}>
+                      <Route index element={<DashboardPage />} />
+                      <Route path="produk" element={<ProductsPage />} />
+                      <Route path="produk/baru" element={<ProductEditPage />} />
+                      <Route path="produk/:id/edit" element={<ProductEditPage />} />
+                      <Route path="kategori" element={<CategoriesPage />} />
+                      <Route path="transaksi" element={<TransactionsPage />} />
+                      <Route path="transaksi/:id" element={<TransactionDetailPage />} />
+                      <Route path="laporan" element={<ReportsPage />} />
+                      <Route path="pengaturan" element={<SettingsPage />} />
+                      <Route path="pengaturan/sheets" element={<SheetsSettingsPage />} />
+                      <Route path="pengaturan/printer" element={<PrinterSettingsPage />} />
+                      <Route path="akun" element={<AccountPage />} />
+                    </Route>
                   </Route>
                   <Route path="/" element={<Navigate to="/kasir" replace />} />
                 </Route>
