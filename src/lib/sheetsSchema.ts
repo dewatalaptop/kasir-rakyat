@@ -176,6 +176,17 @@ export function rowToTransaksi(row: string[]): Transaksi {
   };
 }
 
+// Sheets' `valueInputOption=USER_ENTERED` (used by appendRow/updateRow)
+// semantically parses a written "true"/"false" string as a real boolean
+// cell — reading it back returns the canonical "TRUE"/"FALSE" (uppercase),
+// not the literal lowercase string that was written. An exact-case
+// comparison here would silently always evaluate false (found live: this
+// broke onboarding_completed forever, causing an infinite redirect loop
+// back to /onboarding even after it "succeeded"). Compare case-insensitively.
+function isTrue(value: string | undefined): boolean {
+  return value?.toLowerCase() === "true";
+}
+
 export function settingsRowsToObject(rows: string[][]): Partial<Pengaturan> {
   const map: Record<string, string> = {};
   for (const [key, value] of rows) map[key] = value;
@@ -185,12 +196,12 @@ export function settingsRowsToObject(rows: string[][]): Partial<Pengaturan> {
   if (map.address !== undefined) out.address = map.address;
   if (map.phone !== undefined) out.phone = map.phone;
   if (map.accent_hue !== undefined) out.accentHue = Number(map.accent_hue) || 28;
-  if (map.meja_enabled !== undefined) out.mejaEnabled = map.meja_enabled === "true";
+  if (map.meja_enabled !== undefined) out.mejaEnabled = isTrue(map.meja_enabled);
   if (map.tax_percent !== undefined) out.taxPercent = Number(map.tax_percent) || 0;
   if (map.service_charge_percent !== undefined) out.serviceChargePercent = Number(map.service_charge_percent) || 0;
   if (map.receipt_footer_text !== undefined) out.receiptFooterText = map.receipt_footer_text;
   if (map.printer_pref !== undefined) out.printerPref = map.printer_pref as Pengaturan["printerPref"];
-  if (map.onboarding_completed !== undefined) out.onboardingCompleted = map.onboarding_completed === "true";
+  if (map.onboarding_completed !== undefined) out.onboardingCompleted = isTrue(map.onboarding_completed);
   if (map.sheet_created_at !== undefined) out.sheetCreatedAt = map.sheet_created_at;
   return out;
 }
