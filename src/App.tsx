@@ -5,6 +5,9 @@ import { AdminAuthGuard } from "./components/auth/AdminAuthGuard";
 import { CashierLayout } from "./components/layout/CashierLayout";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import { LoginPage } from "./pages/LoginPage";
+import { LandingPage } from "./pages/LandingPage";
+import { useAuth } from "./hooks/useAuth";
+import { FullPageSpinner } from "./components/ui/Spinner";
 import { OnboardingPage } from "./pages/onboarding/OnboardingPage";
 import { CatalogPage } from "./pages/kasir/CatalogPage";
 import { CartPage } from "./pages/kasir/CartPage";
@@ -28,6 +31,18 @@ import { CartProvider } from "./context/CartContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { ToastProvider } from "./components/ui/Toast";
 
+// "/" is public — anonymous visitors see the marketing LandingPage
+// (never gated behind RouteGuard, unlike every other route), signed-in
+// visitors skip straight to /kasir. This is deliberately its own
+// lightweight check rather than reusing RouteGuard, which always
+// redirects anonymous visitors to /login with no content of its own.
+function HomeRouter() {
+  const { user, loading } = useAuth();
+  if (loading) return <FullPageSpinner />;
+  if (user) return <Navigate to="/kasir" replace />;
+  return <LandingPage />;
+}
+
 function NotFoundPage() {
   return (
     <div className="flex min-h-screen items-center justify-center text-sm text-[var(--text-secondary)]">
@@ -43,12 +58,15 @@ export default function App() {
         <SettingsProvider>
           <CartProvider>
             <Routes>
+              <Route path="/" element={<HomeRouter />} />
               <Route path="/login" element={<LoginPage />} />
               <Route element={<RouteGuard />}>
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route element={<OnboardingGuard />}>
                   {/*
                     Access boundary:
+                    - Public, no login at all: / (marketing LandingPage,
+                      see HomeRouter above) and /login.
                     - Kasir, no password: /kasir/* (Kasir, Keranjang, Bayar,
                       Struk, Riwayat hari ini, Lainnya) and the shared
                       /bantuan — every user, including a kasir with no admin
@@ -83,7 +101,6 @@ export default function App() {
                       <Route path="akun" element={<AccountPage />} />
                     </Route>
                   </Route>
-                  <Route path="/" element={<Navigate to="/kasir" replace />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFoundPage />} />
