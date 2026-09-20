@@ -37,7 +37,7 @@ const probe = `(async () => {
     try { await C.nativePromise("Filesystem", "readFile", { path: "produk-foto/emu-test.jpg", directory: "DATA" }); out.deleted = false; }
     catch { out.deleted = true; }
   } catch (e) { out.filesystemError = String((e && e.message) || e); }
-  out.bodyText = document.body.innerText.replace(/\s+/g, " ").slice(0, 240);
+  out.bodyText = document.body.innerText.slice(0, 240);
   return JSON.stringify(out);
 })()`;
 const res = await evalJs(probe);

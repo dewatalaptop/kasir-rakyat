@@ -28,14 +28,23 @@ adb shell pidof "$PKG" > "$OUT/pid.txt" || echo "PROCESS NOT RUNNING" > "$OUT/pi
 echo "== webview probe"
 node scripts/cdp-probe.mjs "$PKG" 2>&1 | tee "$OUT/probe.txt"
 
-echo "== tap Google sign-in"
-XY=$(node scripts/find-button.mjs "$OUT/01-launch.xml" "Masuk dengan Google" 2>/dev/null)
-echo "button at: ${XY:-not found}" | tee "$OUT/tap.txt"
+echo "== landing -> login"
+XY=$(node scripts/find-button.mjs "$OUT/01-launch.xml" "=Masuk" 2>/dev/null)
+echo "Masuk button at: ${XY:-not found}" | tee "$OUT/tap.txt"
 if [ -n "$XY" ]; then
   adb shell input tap $XY
-  sleep 12
-  shot 02-after-signin-tap
-  dump_ui 02-after-signin-tap
+  sleep 8
+  shot 02-login-page
+  dump_ui 02-login-page
+  echo "== tap Google sign-in"
+  XY2=$(node scripts/find-button.mjs "$OUT/02-login-page.xml" "Masuk dengan Google" 2>/dev/null)
+  echo "Google button at: ${XY2:-not found}" | tee -a "$OUT/tap.txt"
+  if [ -n "$XY2" ]; then
+    adb shell input tap $XY2
+    sleep 15
+    shot 03-after-google-tap
+    dump_ui 03-after-google-tap
+  fi
 fi
 
 adb logcat -d > "$OUT/logcat-full.txt" 2>/dev/null
