@@ -1,7 +1,7 @@
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import type { FotoStorage } from "../types";
-import { SheetsAuthExpiredError, SheetsNetworkError } from "./sheets";
+import { SheetsAuthExpiredError, SheetsNetworkError, reportSheetsProblem } from "./sheets";
 
 // Product photos. Two places a photo can live, chosen in Pengaturan:
 //   - "internal": this device's private app memory (Capacitor Filesystem,
@@ -128,7 +128,10 @@ async function driveFetch(url: string, token: string, init?: RequestInit): Promi
   } catch (err) {
     throw new SheetsNetworkError(err);
   }
-  if (res.status === 401) throw new SheetsAuthExpiredError();
+  if (res.status === 401) {
+    reportSheetsProblem("auth-expired", token);
+    throw new SheetsAuthExpiredError();
+  }
   return res;
 }
 

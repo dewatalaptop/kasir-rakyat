@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useSettings } from "../../context/SettingsContext";
 import type { BusinessTypeKey } from "../../types";
 import { StepConnectSheets } from "./StepConnectSheets";
 import { StepBusinessType } from "./StepBusinessType";
@@ -10,6 +12,12 @@ const STEP_LABELS = ["Sheets", "Jenis Usaha", "Profil", "Selesai"];
 export function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [businessType, setBusinessType] = useState<BusinessTypeKey>("warung");
+  const { settings, connected, loading } = useSettings();
+
+  // A returning owner (same or new device) whose spreadsheet already holds a
+  // finished setup has nothing to onboard — send them straight to the app
+  // instead of walking them through the wizard again.
+  if (!loading && connected && settings.onboardingCompleted) return <Navigate to="/kasir" replace />;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-5 py-10">

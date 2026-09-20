@@ -5,9 +5,10 @@ import { Card } from "../../components/ui/Card";
 import { useToast } from "../../components/ui/Toast";
 import { pendingCount } from "../../lib/pendingQueue";
 import { flushPendingQueue } from "../../lib/checkout";
+import { describeError } from "../../lib/errors";
 
 export function SheetsSettingsPage() {
-  const { connected, spreadsheetId, accessToken, reconnect } = useSettings();
+  const { connected, spreadsheetId, accessToken, reconnect, issue } = useSettings();
   const { show } = useToast();
   const [busy, setBusy] = useState(false);
   const pending = pendingCount();
@@ -18,7 +19,7 @@ export function SheetsSettingsPage() {
       await reconnect();
       show("Google Sheets tersambung ulang.", "success");
     } catch (err) {
-      show(err instanceof Error ? err.message : "Gagal menyambung ulang.", "error");
+      show(describeError(err).message, "error");
     } finally {
       setBusy(false);
     }
@@ -39,7 +40,9 @@ export function SheetsSettingsPage() {
     <div className="flex flex-col gap-4">
       <h1 className="font-display text-lg font-bold text-[var(--text)]">Koneksi Google Sheets</h1>
       <Card>
-        <p className="text-sm text-[var(--text)]">Status: {connected ? "Tersambung" : "Belum tersambung"}</p>
+        <p className="text-sm text-[var(--text)]">
+          Status: {issue === "reauth" ? "Perlu disambungkan ulang (izin Google berakhir)" : issue === "sheet-missing" ? "Spreadsheet tidak ditemukan" : connected ? "Tersambung" : "Belum tersambung"}
+        </p>
         {spreadsheetId && (
           <a
             href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}

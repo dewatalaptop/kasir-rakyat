@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { BrandMark, GoogleIcon } from "../components/ui/icons";
 import { signIn } from "../lib/auth";
+import { describeError } from "../lib/errors";
 import { DEFAULT_PROMO_BACKGROUNDS } from "../assets/promoBackgrounds";
 
 export function LoginPage() {
@@ -15,9 +16,11 @@ export function LoginPage() {
     setError("");
     try {
       await signIn();
-      navigate("/onboarding");
+      // OnboardingGuard sends brand-new owners to /onboarding and everyone
+      // else straight into the app.
+      navigate("/kasir");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal masuk dengan Google.");
+      setError(describeError(err).message);
     } finally {
       setBusy(false);
     }

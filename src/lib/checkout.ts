@@ -77,17 +77,29 @@ export async function submitTransaksi(accessToken: string, spreadsheetId: string
 // failure rather than hammering every remaining item, since a failure
 // here usually means the same underlying problem (offline/expired auth)
 // affects all of them.
-export async function flushPendingQueue(accessToken: string, spreadsheetId: string): Promise<number> {
-  const queue = loadPendingQueue();
-  let flushed = 0;
-  for (const t of queue) {
-    try {
-      await appendTransaksi(accessToken, spreadsheetId, t);
-      removePending(t.id);
-      flushed++;
-    } catch {
-      break;
+let flushInFlight: Promise<number> | null = null;
+
+// Single-flight: it is triggered from several places (reconnect, the 'online'
+// event, the interval, the manual button) and two overlapping runs would each
+// append the same queued sale — appends are not idempotent, so that would
+// double-count revenue.
+export function flushPendingQueue(accessToken: string, spreadsheetId: string): Promise<number> {
+  if (flushInFlight) return flushInFlight;
+  flushInFlight = (async () => {
+    const queue = loadPendingQueue();
+    let flushed = 0;
+    for (const t of queue) {
+      try {
+        await appendTransaksi(accessToken, spreadsheetId, t);
+        removePending(t.id);
+        flushed++;
+      } catch {
+        break;
+      }
     }
-  }
-  return flushed;
+    return flushed;
+  })().finally(() => {
+    flushInFlight = null;
+  });
+  return flushInFlight;
 }

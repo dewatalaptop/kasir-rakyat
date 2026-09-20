@@ -23,7 +23,7 @@ export const HELP_TOPICS: HelpTopic[] = [
   {
     key: "sheets",
     title: "Tentang Google Sheets",
-    body: "Semua data tersimpan di Google Sheets milikmu sendiri, gratis dan aman — aplikasi ini hanya bisa mengakses file yang dibuatnya sendiri. Kalau koneksi terputus, buka Pengaturan > Koneksi Google Sheets untuk menyambung ulang.",
+    body: "Semua data tersimpan di Google Sheets milikmu sendiri, gratis dan aman — aplikasi ini hanya bisa mengakses file yang dibuatnya sendiri. Google membatasi izin akses sekitar 1 jam, jadi sesekali muncul kotak “Sambungkan Ulang” di bagian atas layar — ketuk, pilih akun Google yang sama, selesai. Selama belum tersambung, transaksi baru tetap tersimpan di perangkat dan terkirim otomatis setelah tersambung. Bisa juga lewat Pengaturan > Koneksi Google Sheets.",
   },
   {
     key: "printer",

@@ -45,7 +45,7 @@ export function PaymentPage() {
       if (result.status === "queued-offline") {
         show("Transaksi tersimpan offline, akan disinkron otomatis.", "info");
       } else if (result.status === "auth-expired") {
-        show("Sesi Google Sheets berakhir — transaksi tersimpan, sambungkan ulang di Pengaturan.", "error");
+        show("Sesi Google Sheets berakhir — transaksi aman di perangkat ini. Ketuk \"Sambungkan Ulang\" di bagian atas layar agar terkirim.", "error");
       } else {
         show("Transaksi berhasil disimpan.", "success");
       }

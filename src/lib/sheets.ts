@@ -1,4 +1,4 @@
-import { GoogleAuthProvider, signInWithCredential, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithCredential, signInWithPopup, type User } from "firebase/auth";
 import { Capacitor } from "@capacitor/core";
 import { firebaseAuth } from "../firebase";
 import { nativeGoogleSignIn } from "./nativeGoogle";
@@ -16,13 +16,82 @@ const sheetsProvider = new GoogleAuthProvider();
 sheetsProvider.addScope(SHEETS_SCOPE);
 
 const TOKEN_STORAGE_KEY = "sheetsAccessToken";
+const TOKEN_EXPIRES_KEY = "sheetsAccessTokenExpiresAt";
+
+// Google issues these access tokens for 3600s. Treat one as expired a few
+// minutes early so a request never starts with a token that dies mid-flight.
+const TOKEN_LIFETIME_MS = 55 * 60 * 1000;
 
 export function getStoredAccessToken(): string | null {
-  return localStorage.getItem(TOKEN_STORAGE_KEY);
+  try {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+// When the stored token should be considered dead. null = no token at all.
+// A token stored by an older version of this app has no timestamp; its age
+// is unknown and it is almost certainly stale, so it counts as already
+// expired (worst case: one extra "Sambungkan Ulang" tap).
+export function getStoredTokenExpiry(): number | null {
+  try {
+    if (!localStorage.getItem(TOKEN_STORAGE_KEY)) return null;
+    const raw = Number(localStorage.getItem(TOKEN_EXPIRES_KEY));
+    return Number.isFinite(raw) && raw > 0 ? raw : 0;
+  } catch {
+    return null;
+  }
+}
+
+export function isStoredTokenExpired(): boolean {
+  const expiry = getStoredTokenExpiry();
+  return expiry === null || Date.now() >= expiry;
 }
 
 export function storeAccessToken(token: string): void {
-  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  try {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    localStorage.setItem(TOKEN_EXPIRES_KEY, String(Date.now() + TOKEN_LIFETIME_MS));
+  } catch {
+    /* storage blocked — the in-memory token still works for this session */
+  }
+  for (const listener of tokenListeners) listener(token);
+}
+
+export function clearStoredAccessToken(): void {
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_EXPIRES_KEY);
+  } catch {
+    /* nothing to clear */
+  }
+}
+
+// --- Session-health signals -------------------------------------------------
+// Every Sheets/Drive call in this app funnels through sheetsFetch (or
+// productPhotos' driveFetch), so a 401/404 is reported HERE, once, instead of
+// each of the ~30 call sites having to remember to handle it. SettingsContext
+// subscribes and turns these into the "Sambungkan Ulang" UI. The failing
+// token is included so a late failure from a request that started BEFORE the
+// user reconnected can't re-flag a session that was just repaired.
+type TokenListener = (token: string) => void;
+type ProblemListener = (problem: "auth-expired" | "sheet-missing", failedToken: string) => void;
+const tokenListeners = new Set<TokenListener>();
+const problemListeners = new Set<ProblemListener>();
+
+export function onAccessTokenStored(listener: TokenListener): () => void {
+  tokenListeners.add(listener);
+  return () => tokenListeners.delete(listener);
+}
+
+export function onSheetsProblem(listener: ProblemListener): () => void {
+  problemListeners.add(listener);
+  return () => problemListeners.delete(listener);
+}
+
+export function reportSheetsProblem(problem: "auth-expired" | "sheet-missing", failedToken: string): void {
+  for (const listener of problemListeners) listener(problem, failedToken);
 }
 
 // Popup sign-in, never signInWithRedirect — same requirement as this
@@ -44,8 +113,17 @@ export async function connectGoogleSheets(): Promise<string> {
   if (!credential?.accessToken) {
     throw new Error("Gagal mendapatkan akses Google Sheets — coba lagi.");
   }
-  localStorage.setItem(TOKEN_STORAGE_KEY, credential.accessToken);
+  storeAccessToken(credential.accessToken);
   return credential.accessToken;
+}
+
+// Web sign-in that already carries the Drive/Sheets scope, so the very first
+// login yields a usable Sheets token and there is no second consent popup.
+export async function signInWithSheetsAccess(): Promise<User> {
+  const result = await signInWithPopup(firebaseAuth, sheetsProvider);
+  const credential = GoogleAuthProvider.credentialFromResult(result);
+  if (credential?.accessToken) storeAccessToken(credential.accessToken);
+  return result.user;
 }
 
 // Thrown by every call below on a 401. The access token Firebase hands
@@ -118,8 +196,14 @@ async function sheetsFetch(url: string, accessToken: string, init?: RequestInit)
   } catch (err) {
     throw new SheetsNetworkError(err);
   }
-  if (res.status === 401) throw new SheetsAuthExpiredError();
-  if (res.status === 404) throw new SheetsNotFoundError();
+  if (res.status === 401) {
+    reportSheetsProblem("auth-expired", accessToken);
+    throw new SheetsAuthExpiredError();
+  }
+  if (res.status === 404) {
+    reportSheetsProblem("sheet-missing", accessToken);
+    throw new SheetsNotFoundError();
+  }
   if (res.status === 429) throw new SheetsRateLimitError();
   if (!res.ok) {
     const text = await res.text();

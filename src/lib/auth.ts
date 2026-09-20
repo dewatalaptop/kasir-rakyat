@@ -1,8 +1,9 @@
-import { GoogleAuthProvider, signInWithCredential, signInWithPopup, signOut as firebaseSignOut, type User } from "firebase/auth";
+import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut, type User } from "firebase/auth";
 import { Capacitor } from "@capacitor/core";
-import { firebaseAuth, googleProvider } from "../firebase";
+import { firebaseAuth } from "../firebase";
 import { nativeGoogleSignIn, nativeGoogleSignOut } from "./nativeGoogle";
-import { SHEETS_SCOPE, storeAccessToken } from "./sheets";
+import { SHEETS_SCOPE, clearStoredAccessToken, signInWithSheetsAccess, storeAccessToken } from "./sheets";
+import { clearLocalSession } from "./session";
 
 // Web: signInWithPopup only — never signInWithRedirect (see firebase.ts's own
 // comment: this app's authDomain is the shared project's domain, not its own
@@ -19,11 +20,15 @@ export async function signIn(): Promise<User> {
     if (accessToken) storeAccessToken(accessToken);
     return result.user;
   }
-  const result = await signInWithPopup(firebaseAuth, googleProvider);
-  return result.user;
+  // The popup also asks for the Drive/Sheets scope so one consent covers both.
+  return signInWithSheetsAccess();
 }
 
 export async function signOutUser(): Promise<void> {
+  // Forget this account's spreadsheet + token BEFORE the auth change, so the
+  // next person to sign in on this device can never inherit them.
+  clearStoredAccessToken();
+  clearLocalSession();
   await firebaseSignOut(firebaseAuth);
   if (Capacitor.isNativePlatform()) await nativeGoogleSignOut();
 }
