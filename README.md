@@ -71,6 +71,10 @@ perubahan **native** (plugin, `capacitor.config.json`, Gradle).
   didaftarkan ke app Android Firebase `com.aiappbuilder.kasirrakyat`
   (`android/app/google-services.json`). Jangan ganti keystore tanpa
   mendaftarkan SHA-1 baru.
+- Ikon & splash: sumber di `assets/` (SVG + PNG). Ubah lalu jalankan
+  `npx @capacitor/assets generate --android --assetPath assets` (perlu
+  `sharp`, terpasang otomatis oleh npx) dan bangun ulang APK; ikon web/PWA
+  ada di `public/icons/`.
 - Belum diuji di perangkat asli (tidak ada Android SDK/Java di mesin
   pengembang): uji sign-in Google, ambil foto kamera/galeri, dan simpan ke
   memori internal + Google Drive pada build pertama.
