@@ -8,6 +8,7 @@ import { PAYMENT_METHOD_LABEL } from "../../types";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ReceiptIcon } from "../../components/ui/icons";
 import { Spinner } from "../../components/ui/Spinner";
+import { TopBar } from "../../components/layout/TopBar";
 
 export function TodayHistoryPage() {
   const { accessToken, spreadsheetId } = useSettings();
@@ -28,11 +29,9 @@ export function TodayHistoryPage() {
   const total = today.reduce((s, t) => s + t.total, 0);
 
   return (
-    <div className="p-4">
-      <h1 className="mb-1 font-display text-lg font-bold text-[var(--text)]">Riwayat Hari Ini</h1>
-      <p className="font-tabular mb-4 text-sm text-[var(--text-secondary)]">
-        {today.length} transaksi · {formatRupiah(total)}
-      </p>
+    <div>
+      <TopBar title="Riwayat Hari Ini" subtitle={`${today.length} transaksi · ${formatRupiah(total)}`} />
+      <div className="mx-auto max-w-3xl px-4 pb-6 pt-2 lg:px-6">
       {loading ? (
         <div className="flex justify-center py-8 text-[var(--brand-500)]">
           <Spinner />
@@ -48,7 +47,7 @@ export function TodayHistoryPage() {
               key={t.id}
               type="button"
               onClick={() => navigate(`/kasir/struk/${t.id}`, { state: { transaksi: t } })}
-              className="shape-card flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] p-3 text-left"
+              className="shape-card card-shadow flex min-h-[56px] items-center justify-between border border-[var(--border)] bg-[var(--surface)] p-3.5 text-left transition hover:border-[var(--brand-300)]"
             >
               <div>
                 <p className="text-sm font-semibold text-[var(--text)]">{formatDateTime(t.tanggalWaktu)}</p>
@@ -56,11 +55,12 @@ export function TodayHistoryPage() {
                   {t.jumlahItem} item · {PAYMENT_METHOD_LABEL[t.metodeBayar]}
                 </p>
               </div>
-              <span className="font-tabular text-sm font-bold text-[var(--brand-600)]">{formatRupiah(t.total)}</span>
+              <span className="font-tabular text-sm font-extrabold text-[var(--brand-600)]">{formatRupiah(t.total)}</span>
             </button>
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

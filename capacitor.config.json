@@ -1,0 +1,15 @@
+{
+  "appId": "com.aiappbuilder.kasirrakyat",
+  "appName": "Kasir Rakyat",
+  "webDir": "dist",
+  "server": {
+    "url": "https://kasir-rakyat-demo.web.app",
+    "cleartext": false
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": ["google.com"]
+    }
+  }
+}

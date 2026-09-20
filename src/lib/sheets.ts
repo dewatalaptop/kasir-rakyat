@@ -1,5 +1,7 @@
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithCredential, signInWithPopup } from "firebase/auth";
+import { Capacitor } from "@capacitor/core";
 import { firebaseAuth } from "../firebase";
+import { nativeGoogleSignIn } from "./nativeGoogle";
 
 // Non-sensitive scope: only files this app itself creates (or the user
 // explicitly picks via the Google Picker, not wired here) — never the
@@ -9,7 +11,7 @@ import { firebaseAuth } from "../firebase";
 // warning screen to every user until the app passes that review. See
 // README.md in this same folder for the full rationale and the "when NOT
 // to use this" checklist — read that before wiring this into a project.
-const SHEETS_SCOPE = "https://www.googleapis.com/auth/drive.file";
+export const SHEETS_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const sheetsProvider = new GoogleAuthProvider();
 sheetsProvider.addScope(SHEETS_SCOPE);
 
@@ -19,12 +21,24 @@ export function getStoredAccessToken(): string | null {
   return localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
+export function storeAccessToken(token: string): void {
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+}
+
 // Popup sign-in, never signInWithRedirect — same requirement as this
 // project's own firebase.ts (see the comment there): every project in
 // this shared Firebase setup uses a `authDomain` that isn't the app's own
 // live domain, and redirect silently drops the session under storage
 // partitioning while popup works correctly.
 export async function connectGoogleSheets(): Promise<string> {
+  // Android app: native account picker instead of a WebView popup (see auth.ts).
+  if (Capacitor.isNativePlatform()) {
+    const { idToken, accessToken } = await nativeGoogleSignIn([SHEETS_SCOPE]);
+    if (!accessToken) throw new Error("Gagal mendapatkan akses Google Sheets — coba lagi.");
+    await signInWithCredential(firebaseAuth, GoogleAuthProvider.credential(idToken, accessToken));
+    storeAccessToken(accessToken);
+    return accessToken;
+  }
   const result = await signInWithPopup(firebaseAuth, sheetsProvider);
   const credential = GoogleAuthProvider.credentialFromResult(result);
   if (!credential?.accessToken) {

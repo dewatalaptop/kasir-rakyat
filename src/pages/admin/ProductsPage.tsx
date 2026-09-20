@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { EditIcon, GridIcon, PlusIcon } from "../../components/ui/icons";
 import { Spinner } from "../../components/ui/Spinner";
+import { ProductThumb } from "../../components/catalog/ProductThumb";
 import { useToast } from "../../components/ui/Toast";
 
 export function ProductsPage() {
@@ -56,10 +57,11 @@ export function ProductsPage() {
               key={p.id}
               type="button"
               onClick={() => navigate(`/admin/produk/${p.id}/edit`)}
-              className="shape-card flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] p-3 text-left"
+              className="shape-card card-shadow flex items-center gap-3 border border-[var(--border)] bg-[var(--surface)] p-3 text-left transition hover:border-[var(--brand-300)]"
             >
-              <div>
-                <p className="flex items-center gap-2 text-sm font-semibold text-[var(--text)]">
+              <ProductThumb produk={p} className="h-12 w-12 flex-none rounded-xl text-sm" />
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-2 text-sm font-bold text-[var(--text)]">
                   {p.nama}
                   {p.status === "nonaktif" && (
                     <span className="rounded-full bg-[var(--border-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-faint)]">Nonaktif</span>
@@ -68,7 +70,7 @@ export function ProductsPage() {
                 <p className="text-xs text-[var(--text-secondary)]">{kategoriMap.get(p.kategoriId) ?? "-"}</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-tabular text-sm font-bold text-[var(--brand-600)]">{formatRupiah(p.harga)}</span>
+                <span className="font-tabular text-sm font-extrabold text-[var(--brand-600)]">{formatRupiah(p.harga)}</span>
                 <EditIcon size={16} className="text-[var(--text-faint)]" />
               </div>
             </button>

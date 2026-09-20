@@ -39,7 +39,41 @@ itu sendiri.
   lihat `src/lib/license.ts`) terhadap catatan pembayaran Studio asli —
   bukan sesuatu yang bisa diubah sendiri dari aplikasi ini. Batasan versi
   gratis ada di `src/lib/limits.ts` (maks 20 produk aktif, laporan 7
-  hari, watermark di struk).
+  hari, watermark di struk, tanpa foto produk).
+- **Foto produk** (khusus versi berbayar/prabayar **dan** aplikasi Android —
+  keduanya wajib, lihat `src/lib/features.ts`): kamera/galeri lewat
+  `@capacitor/camera`, foto dikecilkan ke JPEG ≤640px lalu disimpan di
+  tempat pilihan Admin (Pengaturan > Foto Produk): **memori internal
+  aplikasi** (`@capacitor/filesystem`, `Directory.Data` — privat, offline,
+  tidak tampil di HP kasir lain) atau **Google Drive toko** (folder
+  "Kasir Rakyat - Foto Produk", scope `drive.file` yang sama dengan Sheets,
+  tampil di semua HP kasir dan di-cache ke memori internal). Sheets hanya
+  menyimpan referensi di kolom `foto` (`internal:<file>` / `drive:<id>`),
+  bukan gambarnya. Di web/versi gratis fitur terkunci dengan penjelasan.
+  Untuk mencoba UI Android di browser saat `npm run dev`:
+  `localStorage["kasirRakyat.devPlatform"]="android"` (hanya berlaku di dev
+  build).
+
+## Aplikasi Android (APK)
+
+Cangkang native tipis (Capacitor) yang memuat web app live
+(`capacitor.config.json` > `server.url`), jadi perubahan JS/CSS cukup
+di-deploy ulang. APK perlu dibangun ulang + diinstal ulang hanya bila ada
+perubahan **native** (plugin, `capacitor.config.json`, Gradle).
+
+- Bangun via GitHub Actions: **Actions > Build Android APK > Run workflow**
+  (`.github/workflows/build-apk.yml`); APK debug terbit di Release
+  `android-latest`.
+- Login Google memakai plugin native (`src/lib/nativeGoogle.ts`) karena
+  WebView tidak bisa menampilkan layar persetujuan Google. Token
+  Drive/Sheets ikut diminta pada sign-in yang sama.
+- `android/debug.keystore` dipakai bersama `retail-pos`; SHA-1-nya sudah
+  didaftarkan ke app Android Firebase `com.aiappbuilder.kasirrakyat`
+  (`android/app/google-services.json`). Jangan ganti keystore tanpa
+  mendaftarkan SHA-1 baru.
+- Belum diuji di perangkat asli (tidak ada Android SDK/Java di mesin
+  pengembang): uji sign-in Google, ambil foto kamera/galeri, dan simpan ke
+  memori internal + Google Drive pada build pertama.
 
 ## Setup
 

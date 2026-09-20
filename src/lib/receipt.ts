@@ -4,6 +4,11 @@ import { formatDateTime, formatRupiah } from "./format";
 
 const WIDTH = 32;
 
+// Short, human-readable receipt number derived from the transaction id.
+export function receiptNumber(t: Transaksi): string {
+  return `#${t.id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+}
+
 function center(text: string): string {
   if (text.length >= WIDTH) return text.slice(0, WIDTH);
   const pad = Math.floor((WIDTH - text.length) / 2);
@@ -45,6 +50,7 @@ export function buildReceiptText(t: Transaksi, p: Pengaturan, watermark = false)
   if (p.address) wrapLine(p.address).forEach((l) => lines.push(center(l)));
   if (p.phone) lines.push(center(p.phone));
   lines.push(sep());
+  lines.push(twoCol("No.", receiptNumber(t)));
   lines.push(`${formatDateTime(t.tanggalWaktu)}`);
   lines.push(`Kasir: ${t.kasirNama || t.kasirEmail}`);
   if (t.meja) lines.push(`Meja : ${t.meja}`);

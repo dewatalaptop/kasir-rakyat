@@ -164,10 +164,11 @@ export function MenuIcon({ size = 20, ...props }: IconProps) {
   );
 }
 
+// Plain "−" (the previous glyph here was a database-minus icon by mistake).
 export function MinusIcon({ size = 20, ...props }: IconProps) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 14 14" {...props}>
-      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M10.25 13.5a3.25 3.25 0 1 0 0-6.5a3.25 3.25 0 0 0 0 6.5M9 10.25h2.5M6 4.74c3.038 0 5.5-.95 5.5-2.12S9.038.5 6 .5S.5 1.45.5 2.62S2.962 4.74 6 4.74m5.5-.24V2.62"/><path d="M.5 2.62v6.76c0 .93 1.54 1.71 3.69 2"/><path d="M4.49 8C2.19 7.78.5 7 .5 6"/></g>
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" {...props}>
+      <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 12h12" />
     </svg>
   );
 }
@@ -252,3 +253,147 @@ export function WalletIcon({ size = 20, ...props }: IconProps) {
   );
 }
 
+
+// --- Stroke icons added with the Nuvora-green redesign ---------------------
+// Same IconProps contract as above; drawn as 24x24 strokes (currentColor) so
+// they inherit text color like the filled icons do.
+function Stroke({ size = 20, children, ...props }: IconProps & { children: React.ReactNode }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      {children}
+    </svg>
+  );
+}
+
+export function SearchIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </Stroke>
+  );
+}
+
+export function CameraIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
+      <circle cx="12" cy="13" r="3.6" />
+    </Stroke>
+  );
+}
+
+export function CloudIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5 4 4 0 0 1 17.5 18Z" />
+    </Stroke>
+  );
+}
+
+export function SmartphoneIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+      <path d="M11 18.5h2" />
+    </Stroke>
+  );
+}
+
+export function BoxIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="M21 8 12 3 3 8v8l9 5 9-5Z" />
+      <path d="m3.3 7.9 8.7 5 8.7-5M12 21v-8" />
+    </Stroke>
+  );
+}
+
+export function TagIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9Z" />
+      <circle cx="8" cy="8" r="1.3" />
+    </Stroke>
+  );
+}
+
+export function UserIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </Stroke>
+  );
+}
+
+export function ArrowUpIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="M12 19V5M6 11l6-6 6 6" />
+    </Stroke>
+  );
+}
+
+export function ArrowDownIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="M12 5v14M6 13l6 6 6-6" />
+    </Stroke>
+  );
+}
+
+export function TrendIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="m3 17 6-6 4 4 8-8" />
+      <path d="M15 7h6v6" />
+    </Stroke>
+  );
+}
+
+export function BellIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z" />
+      <path d="M10 21h4" />
+    </Stroke>
+  );
+}
+
+export function SaveIcon(p: IconProps) {
+  return (
+    <Stroke {...p}>
+      <path d="M5 4h11l3 3v13H5Z" />
+      <path d="M8 4v5h7V4M8 20v-6h8v6" />
+    </Stroke>
+  );
+}
+
+// Brand mark: a cash-register glyph on the app's green tile.
+export function BrandMark({ size = 36, className = "" }: { size?: number; className?: string }) {
+  return (
+    <span
+      className={`inline-flex flex-none items-center justify-center rounded-xl bg-[var(--brand-500)] text-white ${className}`}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 3h12v5H6z" />
+        <path d="M4 8h16l-1.5 9h-13z" />
+        <path d="M9 12h6M8 20h8" />
+      </svg>
+    </span>
+  );
+}

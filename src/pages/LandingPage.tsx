@@ -49,7 +49,7 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-[var(--bg)]">
       {/* Header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)]/90 px-5 py-3 backdrop-blur">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-5 py-3">
         <span className="font-display text-lg font-extrabold text-[var(--brand-600)]">Kasir Rakyat</span>
         <Button onClick={() => navigate("/login")} shape="pill" variant="ghost" className="text-xs">
           Masuk
@@ -59,7 +59,7 @@ export function LandingPage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <img src={DEFAULT_PROMO_BACKGROUNDS[0].url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[var(--brand-700)]/85 via-[var(--brand-700)]/70 to-[var(--bg)]" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, color-mix(in srgb, var(--brand-700) 85%, transparent), color-mix(in srgb, var(--brand-700) 70%, transparent), var(--bg))" }} />
         <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-5 px-5 py-20 text-center">
           <span className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
             Kasir untuk resto &middot; warung &middot; toko

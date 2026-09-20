@@ -77,7 +77,7 @@ export async function setSettings(accessToken: string, spreadsheetId: string, pa
 // --- Produk / Kategori — update-in-place, single-owner admin CRUD --------
 
 export async function getProduk(accessToken: string, spreadsheetId: string): Promise<Produk[]> {
-  const rows = await readRows(accessToken, spreadsheetId, `${SHEET_TABS.produk}!A2:K`);
+  const rows = await readRows(accessToken, spreadsheetId, `${SHEET_TABS.produk}!A2:${colLetter(HEADERS.produk.length - 1)}`);
   return rows.filter((r) => r[0]).map(rowToProduk).sort((a, b) => a.urutan - b.urutan);
 }
 

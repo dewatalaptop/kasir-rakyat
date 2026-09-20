@@ -4,102 +4,145 @@
 
 /*
  * Design tokens — semantic CSS custom properties (not hardcoded Tailwind
- * color classes), following the same shared-project convention as every
- * sibling app: components read `bg-[var(--surface)]` / `text-[var(--text)]`
+ * color classes): components read `bg-[var(--surface)]` / `text-[var(--text)]`
  * instead of `bg-white dark:bg-slate-900`.
  *
- * Palette: "Kunyit & Daun" (turmeric gold + deep teal) — a deliberate,
- * hand-tuned scale rather than a single-hue formulaic ramp, chosen to read
- * as a warm Indonesian food/retail brand rather than generic SaaS (no
- * cream+serif+terracotta, no purple-blue gradient, no Inter-as-default).
+ * Palette: "Nuvora Green" — a fresh emerald primary on a dark-forest sidebar,
+ * with soft tinted KPI tiles (green / blue / violet / amber), matching the
+ * Kasir-Rakyat product mockup. The token NAMES (--brand-*, --accent-*) are
+ * unchanged from the earlier "Kunyit & Daun" theme so every component
+ * re-themes without per-file edits: --brand-* is the primary green,
+ * --accent-* is the secondary blue.
  */
 :root {
   color-scheme: light;
 
-  --brand-50: #fff8e8;
-  --brand-100: #ffedc2;
-  --brand-200: #ffdd8a;
-  --brand-300: #ffc750;
-  --brand-400: #f7ae2b;
-  --brand-500: #e89416;
-  --brand-600: #c77609;
-  --brand-700: #9c5a08;
+  --brand-50: #ecfaf2;
+  --brand-100: #d2f3e1;
+  --brand-200: #a7e6c3;
+  --brand-300: #6fd3a0;
+  --brand-400: #34b97a;
+  --brand-500: #16a05c;
+  --brand-600: #108048;
+  --brand-700: #0d6539;
 
-  --accent-50: #e3f5f1;
-  --accent-100: #bfe8df;
-  --accent-400: #12856e;
-  --accent-500: #0e6e5b;
-  --accent-600: #0a5647;
-  --accent-700: #073f34;
+  --accent-50: #e9f1fe;
+  --accent-100: #cfe0fc;
+  --accent-400: #4f8ef7;
+  --accent-500: #2f6fe0;
+  --accent-600: #2558b8;
+  --accent-700: #1c4390;
 
-  --bg: #fff6e9;
-  --surface: #fffbf3;
+  --bg: #f2f6f3;
+  --surface: #ffffff;
   --surface-raised: #ffffff;
-  --text: #241b14;
-  --text-secondary: #6b5c4c;
-  --text-faint: #9c8b78;
-  --border: #f0ddc0;
-  --border-soft: #f7ead2;
+  --text: #14211a;
+  --text-secondary: #55655c;
+  --text-faint: #859389;
+  --border: #e2e9e4;
+  --border-soft: #edf2ee;
 
-  --success-bg: var(--accent-50);
-  --success-text: var(--accent-700);
-  --warning-bg: var(--brand-100);
-  --warning-text: var(--brand-700);
-  --error-bg: #fbe4e2;
+  --sidebar-bg: #0b3a29;
+  --sidebar-bg-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-text: #bfd8cb;
+  --sidebar-text-strong: #ffffff;
+  --sidebar-text-dim: #7fa593;
+  --sidebar-active-bg: #ffffff;
+  --sidebar-active-text: #0d6539;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+
+  --kpi-green-bg: #dcf5e6;
+  --kpi-green-fg: #16a05c;
+  --kpi-blue-bg: #dce9fd;
+  --kpi-blue-fg: #2f6fe0;
+  --kpi-violet-bg: #ebe4fb;
+  --kpi-violet-fg: #7145d6;
+  --kpi-amber-bg: #ffe9cf;
+  --kpi-amber-fg: #d97706;
+
+  --success-bg: #dcf5e6;
+  --success-text: #0d6539;
+  --warning-bg: #fdf0d2;
+  --warning-text: #96590a;
+  --error-bg: #fde5e3;
   --error-text: #a12f26;
-  --danger: #d64545;
+  --danger: #dc4438;
 
   --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Shape language: ticket-notch primary CTAs, pill chips, asymmetric cards. */
-  --shape-notch: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
-  --shape-card: 4px 20px 4px 20px;
+  --radius-card: 14px;
+  --shadow-card: 0 1px 2px rgba(16, 40, 28, 0.04), 0 4px 14px rgba(16, 40, 28, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #16110c;
-    --surface: #201811;
-    --surface-raised: #291f16;
-    --text: #fdf3e4;
-    --text-secondary: #cbb89e;
-    --text-faint: #8c7a63;
-    --border: #3a2c1c;
-    --border-soft: #2e2316;
-    --success-bg: #103d33;
-    --success-text: #6fd9c1;
+    --bg: #0d1712;
+    --surface: #14211a;
+    --surface-raised: #1a2a21;
+    --text: #eaf4ee;
+    --text-secondary: #b3c6ba;
+    --text-faint: #7d9186;
+    --border: #243629;
+    --border-soft: #1b2b21;
+    --sidebar-bg: #08281c;
+    --sidebar-active-bg: #16a05c;
+    --sidebar-active-text: #ffffff;
+    --kpi-green-bg: #123a29;
+    --kpi-green-fg: #5fdc9c;
+    --kpi-blue-bg: #14294d;
+    --kpi-blue-fg: #86b2ff;
+    --kpi-violet-bg: #2a1f4d;
+    --kpi-violet-fg: #b79cff;
+    --kpi-amber-bg: #43290a;
+    --kpi-amber-fg: #ffb85c;
+    --success-bg: #123a29;
+    --success-text: #6fe0a5;
     --warning-bg: #3d2c0f;
     --warning-text: #ffcb6b;
     --error-bg: #3d1613;
     --error-text: #ff9a90;
+    --shadow-card: none;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #16110c;
-  --surface: #201811;
-  --surface-raised: #291f16;
-  --text: #fdf3e4;
-  --text-secondary: #cbb89e;
-  --text-faint: #8c7a63;
-  --border: #3a2c1c;
-  --border-soft: #2e2316;
-  --success-bg: #103d33;
-  --success-text: #6fd9c1;
+  --bg: #0d1712;
+  --surface: #14211a;
+  --surface-raised: #1a2a21;
+  --text: #eaf4ee;
+  --text-secondary: #b3c6ba;
+  --text-faint: #7d9186;
+  --border: #243629;
+  --border-soft: #1b2b21;
+  --sidebar-bg: #08281c;
+  --sidebar-active-bg: #16a05c;
+  --sidebar-active-text: #ffffff;
+  --kpi-green-bg: #123a29;
+  --kpi-green-fg: #5fdc9c;
+  --kpi-blue-bg: #14294d;
+  --kpi-blue-fg: #86b2ff;
+  --kpi-violet-bg: #2a1f4d;
+  --kpi-violet-fg: #b79cff;
+  --kpi-amber-bg: #43290a;
+  --kpi-amber-fg: #ffb85c;
+  --success-bg: #123a29;
+  --success-text: #6fe0a5;
   --warning-bg: #3d2c0f;
   --warning-text: #ffcb6b;
   --error-bg: #3d1613;
   --error-text: #ff9a90;
+  --shadow-card: none;
 }
 
 body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3, h4, .font-display {
@@ -107,18 +150,23 @@ h1, h2, h3, h4, .font-display {
 }
 
 .font-tabular {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-variant-numeric: tabular-nums;
 }
 
-/* Primary CTA shape — receipt-stub notch, not a plain rounded rectangle. */
+/* Primary CTA shape — a regular rounded rectangle now (the old ticket-notch
+   clip-path is gone), kept as a class name so existing markup still works. */
 .shape-notch {
-  clip-path: var(--shape-notch);
+  border-radius: 12px;
 }
 
-/* Product/stat/receipt card shape — single-diagonal asymmetric rounding. */
+/* Product/stat/receipt card shape — uniform soft rounding. */
 .shape-card {
-  border-radius: var(--shape-card);
+  border-radius: var(--radius-card);
+}
+
+.card-shadow {
+  box-shadow: var(--shadow-card);
 }
 
 .scrollbar-hide {
@@ -152,5 +200,6 @@ h1, h2, h3, h4, .font-display {
     left: 0;
     top: 0;
     width: 100%;
+    box-shadow: none !important;
   }
 }

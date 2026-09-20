@@ -25,6 +25,10 @@ export const HEADERS = {
     "icon_key",
     "created_at",
     "updated_at",
+    // Appended LAST on purpose: row<->object mapping is positional, so a new
+    // column at the end keeps every existing spreadsheet's data valid (old
+    // rows simply have an empty 12th cell).
+    "foto",
   ],
   kategori: ["id", "nama", "urutan", "warna_tag", "created_at"],
   transaksi: [
@@ -78,11 +82,12 @@ export function produkToRow(p: Produk): (string | number)[] {
     p.iconKey,
     p.createdAt,
     p.updatedAt,
+    p.foto ?? "",
   ];
 }
 
 export function rowToProduk(row: string[]): Produk {
-  const [id, nama, kategoriId, harga, deskripsi, status, stok, urutan, iconKey, createdAt, updatedAt] = row;
+  const [id, nama, kategoriId, harga, deskripsi, status, stok, urutan, iconKey, createdAt, updatedAt, foto] = row;
   return {
     id,
     nama,
@@ -95,6 +100,7 @@ export function rowToProduk(row: string[]): Produk {
     iconKey: iconKey ?? "package",
     createdAt: createdAt ?? "",
     updatedAt: updatedAt ?? "",
+    foto: foto ?? "",
   };
 }
 
@@ -201,6 +207,7 @@ export function settingsRowsToObject(rows: string[][]): Partial<Pengaturan> {
   if (map.service_charge_percent !== undefined) out.serviceChargePercent = Number(map.service_charge_percent) || 0;
   if (map.receipt_footer_text !== undefined) out.receiptFooterText = map.receipt_footer_text;
   if (map.printer_pref !== undefined) out.printerPref = map.printer_pref as Pengaturan["printerPref"];
+  if (map.foto_storage !== undefined) out.fotoStorage = map.foto_storage === "drive" ? "drive" : "internal";
   if (map.onboarding_completed !== undefined) out.onboardingCompleted = isTrue(map.onboarding_completed);
   if (map.sheet_created_at !== undefined) out.sheetCreatedAt = map.sheet_created_at;
   if (map.admin_password_hash !== undefined) out.adminPasswordHash = map.admin_password_hash;

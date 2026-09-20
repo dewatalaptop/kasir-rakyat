@@ -56,6 +56,7 @@ export function StepDone({ businessType }: { businessType: BusinessTypeKey }) {
             stokTampilan: null,
             urutan: i,
             iconKey: "package",
+            foto: "",
             createdAt: now,
             updatedAt: now,
           };

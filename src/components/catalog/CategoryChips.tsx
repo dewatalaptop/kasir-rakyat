@@ -1,5 +1,21 @@
 import type { Kategori } from "../../types";
 
+function Chip({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-[40px] flex-none rounded-xl px-4 text-[13px] font-bold transition ${
+        active
+          ? "bg-[var(--brand-500)] text-white shadow-sm"
+          : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-[var(--brand-300)] hover:text-[var(--brand-700)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function CategoryChips({
   kategori,
   active,
@@ -10,27 +26,10 @@ export function CategoryChips({
   onChange: (id: string | null) => void;
 }) {
   return (
-    <div className="scrollbar-hide flex gap-2 overflow-x-auto px-4 py-2">
-      <button
-        type="button"
-        onClick={() => onChange(null)}
-        className={`flex-none rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-          active === null ? "bg-[var(--brand-500)] text-white" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)]"
-        }`}
-      >
-        Semua
-      </button>
+    <div className="scrollbar-hide flex gap-2 overflow-x-auto px-4 py-2 lg:px-6">
+      <Chip active={active === null} label="Semua" onClick={() => onChange(null)} />
       {kategori.map((k) => (
-        <button
-          key={k.id}
-          type="button"
-          onClick={() => onChange(k.id)}
-          className={`flex-none rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-            active === k.id ? "bg-[var(--brand-500)] text-white" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--border)]"
-          }`}
-        >
-          {k.nama}
-        </button>
+        <Chip key={k.id} active={active === k.id} label={k.nama} onClick={() => onChange(k.id)} />
       ))}
     </div>
   );

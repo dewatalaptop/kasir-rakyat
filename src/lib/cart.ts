@@ -32,7 +32,10 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       }
       return {
         ...state,
-        lines: [...state.lines, { produkId: action.produk.id, nama: action.produk.nama, harga: action.produk.harga, qty: 1 }],
+        lines: [
+          ...state.lines,
+          { produkId: action.produk.id, nama: action.produk.nama, harga: action.produk.harga, qty: 1, foto: action.produk.foto || undefined },
+        ],
       };
     }
     case "setQty": {

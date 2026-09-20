@@ -4,14 +4,15 @@ import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
 import { getKategori, getProduk, saveProduk } from "../../lib/sheetsStore";
 import { limitsFor } from "../../lib/limits";
-import { ProductForm } from "../../components/admin/ProductForm";
+import { ProductForm, type PhotoChange } from "../../components/admin/ProductForm";
+import { deletePhoto, savePhoto } from "../../lib/productPhotos";
 import { Spinner } from "../../components/ui/Spinner";
 import { useToast } from "../../components/ui/Toast";
 import type { Produk } from "../../types";
 
 export function ProductEditPage() {
   const { id } = useParams();
-  const { accessToken, spreadsheetId, plan } = useSettings();
+  const { accessToken, spreadsheetId, plan, settings } = useSettings();
   const navigate = useNavigate();
   const { show } = useToast();
   const [busy, setBusy] = useState(false);
@@ -22,7 +23,7 @@ export function ProductEditPage() {
     [id, accessToken, spreadsheetId]
   );
 
-  async function handleSubmit(data: Omit<Produk, "id" | "createdAt" | "updatedAt">) {
+  async function handleSubmit(data: Omit<Produk, "id" | "createdAt" | "updatedAt" | "foto">, photo: PhotoChange) {
     if (!accessToken || !spreadsheetId) return;
     // Defense in depth: ProductsPage already blocks the "+ Tambah" nav at
     // the cap, this re-checks in case someone navigates here directly.
@@ -37,18 +38,32 @@ export function ProductEditPage() {
       }
     }
     setBusy(true);
+    let newRef = "";
     try {
       const now = new Date().toISOString();
+      const produkId = produkResult.data?.id ?? crypto.randomUUID();
+      const oldRef = produkResult.data?.foto ?? "";
+      let foto = photo.removed ? "" : oldRef;
+      if (photo.pending) {
+        newRef = await savePhoto(photo.pending.base64, produkId, settings.fotoStorage, accessToken);
+        foto = newRef;
+      }
       const produk: Produk = {
-        id: produkResult.data?.id ?? crypto.randomUUID(),
+        id: produkId,
         createdAt: produkResult.data?.createdAt ?? now,
         updatedAt: now,
         ...data,
+        foto,
       };
       await saveProduk(accessToken, spreadsheetId, produk);
+      // The replaced/removed file is deleted only AFTER the sheet row points
+      // at the new state, so a failed save never loses the old photo.
+      if (oldRef && oldRef !== foto) await deletePhoto(oldRef, accessToken).catch(() => {});
       show("Produk disimpan.", "success");
       navigate("/admin/produk");
     } catch (err) {
+      // Do not leave the just-written new photo orphaned if saving failed.
+      if (newRef) await deletePhoto(newRef, accessToken).catch(() => {});
       show(err instanceof Error ? err.message : "Gagal menyimpan produk.", "error");
     } finally {
       setBusy(false);

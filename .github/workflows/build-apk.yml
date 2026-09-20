@@ -1,0 +1,83 @@
+name: Build Android APK
+
+# Manual trigger only — an unrelated commit to the web app shouldn't burn CI
+# minutes rebuilding the Android wrapper. Run it from the repo's
+# Actions > Build Android APK > Run workflow.
+#
+# The APK is a thin native shell (Capacitor) around the already-deployed live
+# web app (capacitor.config.json > server.url), so JS/CSS changes reach an
+# installed app by just redeploying the web app. Rebuild + reinstall the APK
+# only when NATIVE things change (plugins, capacitor.config.json, Gradle).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed to publish the APK to a GitHub Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Capacitor 8's Android Gradle Plugin requires JDK 21 (confirmed via a
+      # real CI failure with 17 on retail-pos).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # Tie versionCode/versionName to the run number so every build is a
+      # genuine, installer-visible update (Settings > App info proves whether a
+      # reinstall actually took effect).
+      - name: Stamp app version from the build number
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+
+      - run: npx cap sync android
+
+      # Native Google Sign-In verifies the app by its signing certificate, so
+      # the debug keystore must be the SAME on every run. It is committed at
+      # android/debug.keystore (shared with retail-pos, SHA-1 registered in
+      # Firebase for com.aiappbuilder.kasirrakyat) and app/build.gradle points
+      # its debug signingConfig at it explicitly.
+      - name: Use the committed debug keystore
+        run: |
+          mkdir -p ~/.android
+          cp android/debug.keystore ~/.android/debug.keystore
+          keytool -list -v -keystore android/debug.keystore -storepass android -alias androiddebugkey | grep "SHA1:"
+
+      - name: Build debug APK
+        working-directory: android
+        # gradlew loses its executable bit when committed from Windows.
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      # keytool prints the keystore FILE's fingerprint, not what actually
+      # signed this APK. apksigner reads the real v2/v3 signing block — the
+      # authoritative check that the registered SHA-1 is what's baked in.
+      - name: Verify the actual signing certificate baked into this APK
+        working-directory: android
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME" -name apksigner -type f | sort -V | tail -1)
+          echo "Using apksigner: $APKSIGNER"
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish APK to a GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Android build (run ${{ github.run_number }})
+          body: Debug-signed APK, auto-published by the Build Android APK workflow. Not for Play Store distribution.
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          make_latest: true

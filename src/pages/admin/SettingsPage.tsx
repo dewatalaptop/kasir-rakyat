@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/Button";
 import { useToast } from "../../components/ui/Toast";
 import { BUSINESS_TYPES } from "../../lib/businessType";
 import { hashPassword } from "../../lib/adminAuth";
+import { PhotoStorageCard } from "../../components/admin/PhotoStorageCard";
 
 export function SettingsPage() {
   const { settings, updateSettings } = useSettings();
@@ -45,8 +46,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="font-display text-lg font-bold text-[var(--text)]">Pengaturan</h1>
+    <div className="flex max-w-2xl flex-col gap-4">
+      <h1 className="font-display text-xl font-extrabold text-[var(--text)]">Pengaturan</h1>
       <form onSubmit={handleSave} className="flex flex-col gap-3">
         <label className="text-xs font-medium text-[var(--text-secondary)]">Nama Usaha</label>
         <input
@@ -111,6 +112,7 @@ export function SettingsPage() {
           {busy ? "Menyimpan..." : "Simpan Pengaturan"}
         </Button>
       </form>
+      <PhotoStorageCard />
       <div className="flex flex-col gap-2 border-t border-[var(--border-soft)] pt-3">
         <Button onClick={() => navigate("/admin/pengaturan/sheets")} variant="ghost" fullWidth>
           Koneksi Google Sheets

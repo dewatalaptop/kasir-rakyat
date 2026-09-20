@@ -10,9 +10,16 @@ export interface Produk {
   stokTampilan: number | null;
   urutan: number;
   iconKey: string;
+  // Reference to a product photo, "" when none. Format: "internal:<filename>"
+  // (private app storage on this device) or "drive:<fileId>" (Google Drive
+  // file created by this app). Only meaningful on the paid Android app —
+  // see src/lib/features.ts and src/lib/productPhotos.ts.
+  foto: string;
   createdAt: string;
   updatedAt: string;
 }
+
+export type FotoStorage = "internal" | "drive";
 
 export interface Kategori {
   id: string;
@@ -29,6 +36,10 @@ export interface CartLine {
   nama: string;
   harga: number;
   qty: number;
+  // UI-only: product photo reference so the cart can show a thumbnail. It is
+  // stripped before a transaction is saved (see checkout.buildTransaksi) —
+  // photo refs must never end up in the Transaksi sheet history.
+  foto?: string;
 }
 
 export interface Transaksi {
@@ -62,6 +73,9 @@ export interface Pengaturan {
   serviceChargePercent: number;
   receiptFooterText: string;
   printerPref: "rawbt" | "browser";
+  // Where NEW product photos are saved: this device's private app memory, or
+  // the store's own Google Drive (visible on every cashier phone).
+  fotoStorage: FotoStorage;
   onboardingCompleted: boolean;
   sheetCreatedAt: string;
   // SHA-256 hex hash, never the plaintext password itself — empty/absent

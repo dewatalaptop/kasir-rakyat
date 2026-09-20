@@ -4,7 +4,7 @@
   "description": "Aplikasi kasir untuk resto, warung, dan toko.",
   "start_url": "/kasir",
   "display": "standalone",
-  "background_color": "#FFF6E9",
-  "theme_color": "#E89416",
+  "background_color": "#F2F6F3",
+  "theme_color": "#0B3A29",
   "icons": [{ "src": "/icons/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }

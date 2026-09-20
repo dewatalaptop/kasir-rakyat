@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS: Pengaturan = {
   serviceChargePercent: 0,
   receiptFooterText: "Terima kasih atas kunjungan Anda!",
   printerPref: "rawbt",
+  fotoStorage: "internal",
   onboardingCompleted: false,
   sheetCreatedAt: "",
   adminPasswordHash: "",

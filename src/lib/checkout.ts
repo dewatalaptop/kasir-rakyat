@@ -25,7 +25,8 @@ export function buildTransaksi(input: CheckoutInput): Transaksi {
     kasirEmail: input.kasirEmail,
     kasirNama: input.kasirNama,
     meja: input.meja,
-    items: input.lines,
+    // strip UI-only fields (foto) — only sale data goes into the sheet
+    items: input.lines.map(({ produkId, nama, harga, qty }) => ({ produkId, nama, harga, qty })),
     jumlahItem: input.lines.reduce((s, l) => s + l.qty, 0),
     subtotal: totals.subtotal,
     diskon: input.diskon ?? 0,
