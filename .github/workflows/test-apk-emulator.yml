@@ -1,0 +1,46 @@
+name: Test APK on Android emulator
+
+# Manual: downloads the latest APK from the android-latest release, boots an
+# Android emulator (KVM-accelerated, free on GitHub runners), installs and
+# launches the app, and uploads screenshots + logcat + a WebView/native-plugin
+# probe as the "emulator-results" artifact.
+on:
+  workflow_dispatch:
+
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download the latest debug APK
+        run: curl -fsSL -o app-debug.apk "https://github.com/${{ github.repository }}/releases/download/android-latest/app-debug.apk" && ls -l app-debug.apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run app on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-boot-timeout: 900
+          script: bash scripts/emulator-smoke.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulator-results
+          path: emulator-out/
+          if-no-files-found: warn
