@@ -1,4 +1,5 @@
 import type { Produk, Transaksi } from "../types";
+import { effectiveTransaksi } from "./ledger";
 
 export const LOW_STOCK_THRESHOLD = 5;
 
@@ -35,9 +36,10 @@ function sameDay(iso: string, ref: Date): boolean {
   return new Date(iso).toDateString() === ref.toDateString();
 }
 
-// Completed sales only ("dibatalkan" rows are append-only reversal records).
+// Completed, non-voided sales only (see ledger.ts: voiding appends a reversal
+// row, so the ORIGINAL sale must be excluded as well as the reversal).
 export function computeTodayStats(transaksi: Transaksi[], now = new Date()): TodayStats {
-  const done = transaksi.filter((t) => t.status === "selesai");
+  const done = effectiveTransaksi(transaksi);
   const yest = new Date(now);
   yest.setDate(now.getDate() - 1);
   const today = dayStats(done.filter((t) => sameDay(t.tanggalWaktu, now)));
@@ -80,8 +82,7 @@ export function dailySeries(transaksi: Transaksi[], days: number, now = new Date
     d.setDate(d.getDate() - i);
     points.push({ date: d, omzet: 0, count: 0 });
   }
-  for (const t of transaksi) {
-    if (t.status !== "selesai") continue;
+  for (const t of effectiveTransaksi(transaksi)) {
     const p = points.find((pt) => sameDay(t.tanggalWaktu, pt.date));
     if (p) {
       p.omzet += t.total;

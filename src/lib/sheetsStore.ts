@@ -7,8 +7,9 @@ import {
   updateRow,
   writeHeaderRow,
 } from "./sheets";
-import { HEADERS, SHEET_TABS, kategoriToRow, produkToRow, rowToKategori, rowToProduk, rowToTransaksi, settingsRowsToObject, transaksiToRow } from "./sheetsSchema";
-import type { Kategori, Pengaturan, Produk, Transaksi } from "../types";
+import { HEADERS, SHEET_TABS, kasirToRow, kategoriToRow, produkToRow, rowToKasir, rowToKategori, rowToProduk, rowToTransaksi, settingsRowsToObject, transaksiToRow } from "./sheetsSchema";
+import type { KasirProfil, Kategori, Pengaturan, Produk, Transaksi } from "../types";
+import { dedupeById } from "./ledger";
 
 const SPREADSHEET_TITLE_PREFIX = "Kasir Rakyat";
 
@@ -25,6 +26,7 @@ export async function ensureAppSpreadsheet(accessToken: string, businessName: st
     writeHeaderRow(accessToken, spreadsheetId, SHEET_TABS.produk, [...HEADERS.produk]),
     writeHeaderRow(accessToken, spreadsheetId, SHEET_TABS.kategori, [...HEADERS.kategori]),
     writeHeaderRow(accessToken, spreadsheetId, SHEET_TABS.transaksi, [...HEADERS.transaksi]),
+    writeHeaderRow(accessToken, spreadsheetId, SHEET_TABS.kasir, [...HEADERS.kasir]),
   ]);
   return spreadsheetId;
 }
@@ -108,6 +110,50 @@ export async function saveKategori(accessToken: string, spreadsheetId: string, k
   }
 }
 
+// --- Kasir (cashier profiles) — update-in-place, owner-managed -------------
+// Spreadsheets created before this feature have no "Kasir" tab, so the first
+// read/write creates it (idempotent) instead of failing with "Unable to parse
+// range". Detected by the API error text, since Sheets has no stable code here.
+
+async function ensureKasirTab(accessToken: string, spreadsheetId: string): Promise<void> {
+  await ensureSheetTabs(accessToken, spreadsheetId, [SHEET_TABS.kasir]);
+  await writeHeaderRow(accessToken, spreadsheetId, SHEET_TABS.kasir, [...HEADERS.kasir]);
+}
+
+function isMissingTab(err: unknown): boolean {
+  return err instanceof Error && /unable to parse range/i.test(err.message);
+}
+
+export async function getKasir(accessToken: string, spreadsheetId: string): Promise<KasirProfil[]> {
+  const lastCol = colLetter(HEADERS.kasir.length - 1);
+  try {
+    const rows = await readRows(accessToken, spreadsheetId, `${SHEET_TABS.kasir}!A2:${lastCol}`);
+    return rows.filter((r) => r[0]).map(rowToKasir);
+  } catch (err) {
+    if (!isMissingTab(err)) throw err;
+    await ensureKasirTab(accessToken, spreadsheetId);
+    return [];
+  }
+}
+
+export async function saveKasir(accessToken: string, spreadsheetId: string, kasir: KasirProfil): Promise<void> {
+  const lastCol = colLetter(HEADERS.kasir.length - 1);
+  let found: { rowNumber: number } | null;
+  try {
+    found = await findRowNumberById(accessToken, spreadsheetId, SHEET_TABS.kasir, kasir.id);
+  } catch (err) {
+    if (!isMissingTab(err)) throw err;
+    await ensureKasirTab(accessToken, spreadsheetId);
+    found = null;
+  }
+  const row = kasirToRow(kasir);
+  if (found) {
+    await updateRow(accessToken, spreadsheetId, `${SHEET_TABS.kasir}!A${found.rowNumber}:${lastCol}${found.rowNumber}`, row);
+  } else {
+    await appendRow(accessToken, spreadsheetId, `${SHEET_TABS.kasir}!A2:${lastCol}`, row);
+  }
+}
+
 // --- Transaksi — APPEND-ONLY, no exceptions -------------------------------
 // Checkout's hot path only ever calls appendTransaksi. Never look up or
 // update an existing row here — that's the one rule that keeps concurrent
@@ -121,10 +167,14 @@ export async function appendTransaksi(accessToken: string, spreadsheetId: string
 export async function getTransaksi(accessToken: string, spreadsheetId: string): Promise<Transaksi[]> {
   const lastCol = colLetter(HEADERS.transaksi.length - 1);
   const rows = await readRows(accessToken, spreadsheetId, `${SHEET_TABS.transaksi}!A2:${lastCol}`);
-  return rows
-    .filter((r) => r[0])
-    .map(rowToTransaksi)
-    .sort((a, b) => (a.tanggalWaktu < b.tanggalWaktu ? 1 : -1));
+  // dedupeById: an append whose response was lost gets retried by the client,
+  // which can leave two rows with the same id — count it once.
+  return dedupeById(
+    rows
+      .filter((r) => r[0])
+      .map(rowToTransaksi)
+      .sort((a, b) => (a.tanggalWaktu < b.tanggalWaktu ? 1 : -1))
+  );
 }
 
 export async function clearRow(accessToken: string, spreadsheetId: string, range: string): Promise<void> {

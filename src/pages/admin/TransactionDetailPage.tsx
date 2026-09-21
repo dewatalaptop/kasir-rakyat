@@ -3,16 +3,22 @@ import { useLocation, useNavigate } from "react-router-dom";
 import type { Transaksi } from "../../types";
 import { PAYMENT_METHOD_LABEL } from "../../types";
 import { formatDateTime, formatRupiah } from "../../lib/format";
+import { serviceChargeOf } from "../../lib/receipt";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { useSettings } from "../../context/SettingsContext";
-import { appendTransaksi } from "../../lib/sheetsStore";
+import { appendTransaksi, getTransaksi } from "../../lib/sheetsStore";
+import { isVoided } from "../../lib/ledger";
+import { useAccess } from "../../context/AccessContext";
+import { useSheetsData } from "../../hooks/useSheetsData";
 import { useToast } from "../../components/ui/Toast";
 
 export function TransactionDetailPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { accessToken, spreadsheetId } = useSettings();
+  const { can, actorName } = useAccess();
+  const listResult = useSheetsData(accessToken && spreadsheetId ? () => getTransaksi(accessToken, spreadsheetId) : null, [accessToken, spreadsheetId]);
   const { show } = useToast();
   const [busy, setBusy] = useState(false);
   const t = (location.state as { transaksi?: Transaksi } | null)?.transaksi;
@@ -27,6 +33,10 @@ export function TransactionDetailPage() {
 
   async function handleCancel() {
     if (!accessToken || !spreadsheetId || !t || busy) return;
+    if (!can("batalkan")) {
+      show("Kamu tidak punya izin membatalkan transaksi.", "error");
+      return;
+    }
     if (!confirm("Batalkan transaksi ini? Ini akan mencatat baris pembatalan baru, bukan menghapus riwayat.")) return;
     setBusy(true);
     try {
@@ -34,7 +44,22 @@ export function TransactionDetailPage() {
       // original — preserves the append-only guarantee even for
       // corrections (see plan: Transaksi tab is append-only, no
       // exceptions).
-      const cancellation: Transaksi = { ...t, id: crypto.randomUUID(), tanggalWaktu: new Date().toISOString(), status: "dibatalkan", idTransaksiAsal: t.id };
+      // Re-read right before writing: another device may have voided it meanwhile.
+      const fresh = await getTransaksi(accessToken, spreadsheetId);
+      if (isVoided(t, fresh)) {
+        show("Transaksi ini sudah dibatalkan.", "info");
+        navigate("/admin/transaksi");
+        return;
+      }
+      const cancellation: Transaksi = {
+        ...t,
+        id: crypto.randomUUID(),
+        tanggalWaktu: new Date().toISOString(),
+        // who voided it (the original row keeps who sold it)
+        kasirNama: actorName,
+        status: "dibatalkan",
+        idTransaksiAsal: t.id,
+      };
       await appendTransaksi(accessToken, spreadsheetId, cancellation);
       show("Transaksi dibatalkan.", "success");
       navigate("/admin/transaksi");
@@ -62,13 +87,19 @@ export function TransactionDetailPage() {
             </div>
           ))}
         </div>
+        <div className="mb-2 flex flex-col gap-1 text-xs text-[var(--text-secondary)]">
+          <div className="flex justify-between"><span>Subtotal</span><span className="font-tabular">{formatRupiah(t.subtotal)}</span></div>
+          {t.diskon > 0 && <div className="flex justify-between"><span>Diskon</span><span className="font-tabular">-{formatRupiah(t.diskon)}</span></div>}
+          {t.pajak > 0 && <div className="flex justify-between"><span>Pajak</span><span className="font-tabular">{formatRupiah(t.pajak)}</span></div>}
+          {serviceChargeOf(t) > 0 && <div className="flex justify-between"><span>Service</span><span className="font-tabular">{formatRupiah(serviceChargeOf(t))}</span></div>}
+        </div>
         <div className="flex justify-between font-display text-base font-bold text-[var(--text)]">
           <span>Total</span>
           <span className="font-tabular">{formatRupiah(t.total)}</span>
         </div>
         <p className="mt-1 text-xs text-[var(--text-secondary)]">Bayar: {PAYMENT_METHOD_LABEL[t.metodeBayar]}</p>
       </Card>
-      {t.status === "selesai" && (
+      {t.status === "selesai" && !isVoided(t, listResult.data ?? []) && can("batalkan") && (
         <Button onClick={handleCancel} disabled={busy} variant="danger" fullWidth>
           {busy ? "Membatalkan..." : "Batalkan Transaksi"}
         </Button>

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
 import { getTransaksi } from "../../lib/sheetsStore";
+import { effectiveTransaksi } from "../../lib/ledger";
+import { useAccess } from "../../context/AccessContext";
 import { formatDateTime, formatRupiah } from "../../lib/format";
 import { PAYMENT_METHOD_LABEL } from "../../types";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -13,6 +15,9 @@ import { TopBar } from "../../components/layout/TopBar";
 export function TodayHistoryPage() {
   const { accessToken, spreadsheetId } = useSettings();
   const navigate = useNavigate();
+  const { activeKasir, can, actorName } = useAccess();
+  // A kasir without the "riwayat" permission only sees their own sales.
+  const ownOnly = !!activeKasir && !can("riwayat");
   const { data, loading, error } = useSheetsData(
     accessToken && spreadsheetId ? () => getTransaksi(accessToken, spreadsheetId) : null,
     [accessToken, spreadsheetId]
@@ -20,11 +25,10 @@ export function TodayHistoryPage() {
 
   const today = useMemo(() => {
     const now = new Date();
-    return (data ?? []).filter((t) => {
-      const d = new Date(t.tanggalWaktu);
-      return d.toDateString() === now.toDateString() && t.status === "selesai";
-    });
-  }, [data]);
+    return effectiveTransaksi(data ?? []).filter(
+      (t) => new Date(t.tanggalWaktu).toDateString() === now.toDateString() && (!ownOnly || t.kasirNama === actorName)
+    );
+  }, [data, ownOnly, actorName]);
 
   const total = today.reduce((s, t) => s + t.total, 0);
 

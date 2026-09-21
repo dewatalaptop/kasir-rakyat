@@ -3,6 +3,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
 import { getProduk, getTransaksi } from "../../lib/sheetsStore";
 import { formatRupiah } from "../../lib/format";
+import { effectiveTransaksi } from "../../lib/ledger";
 import { computeTodayStats, dailySeries, formatDelta, lowStockProducts } from "../../lib/stats";
 import { Card, StatCard } from "../../components/ui/Card";
 import { BarChart } from "../../components/ui/BarChart";
@@ -19,7 +20,7 @@ export function DashboardPage() {
     const all = data ?? [];
     const stats = computeTodayStats(all);
     const now = new Date();
-    const today = all.filter((t) => t.status === "selesai" && new Date(t.tanggalWaktu).toDateString() === now.toDateString());
+    const today = effectiveTransaksi(all).filter((t) => new Date(t.tanggalWaktu).toDateString() === now.toDateString());
     const counts = new Map<string, number>();
     for (const t of today) for (const item of t.items) counts.set(item.nama, (counts.get(item.nama) ?? 0) + item.qty);
     const best = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);

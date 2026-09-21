@@ -8,6 +8,7 @@ import { CartTotals } from "../../components/cart/CartTotals";
 import { useCart } from "../../context/CartContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useAccess } from "../../context/AccessContext";
 import { useToast } from "../../components/ui/Toast";
 import { computeTotals } from "../../lib/cart";
 import { buildTransaksi, submitTransaksi } from "../../lib/checkout";
@@ -18,6 +19,7 @@ export function PaymentPage() {
   const { state, dispatch } = useCart();
   const { settings, accessToken, spreadsheetId } = useSettings();
   const { user } = useAuth();
+  const { actorName } = useAccess();
   const { show } = useToast();
   const navigate = useNavigate();
   const [method, setMethod] = useState<PaymentMethod | null>(null);
@@ -38,7 +40,7 @@ export function PaymentPage() {
         metodeBayar: method,
         uangDiterima: method === "tunai" ? uangDiterima : null,
         kasirEmail: user.email ?? "",
-        kasirNama: user.displayName ?? user.email ?? "Kasir",
+        kasirNama: actorName,
         settings: { taxPercent: settings.taxPercent, serviceChargePercent: settings.serviceChargePercent },
       });
       const result = await submitTransaksi(accessToken, spreadsheetId, transaksi);
@@ -50,7 +52,7 @@ export function PaymentPage() {
         show("Transaksi berhasil disimpan.", "success");
       }
       dispatch({ type: "clear" });
-      navigate(`/kasir/struk/${transaksi.id}`, { state: { transaksi } });
+      navigate(`/kasir/struk/${transaksi.id}`, { state: { transaksi, fresh: true } });
     } finally {
       setBusy(false);
     }

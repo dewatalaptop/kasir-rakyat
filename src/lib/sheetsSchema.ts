@@ -1,4 +1,4 @@
-import type { CartLine, Kategori, PaymentMethod, Pengaturan, Produk, Transaksi } from "../types";
+import type { CartLine, KasirProfil, KasirRole, Kategori, PaymentMethod, Pengaturan, Permission, Produk, Transaksi } from "../types";
 
 // One tab per "table". Header row is written once at spreadsheet creation
 // (see sheetsStore.ensureAppSpreadsheet) and never touched again — column
@@ -9,6 +9,7 @@ export const SHEET_TABS = {
   produk: "Produk",
   kategori: "Kategori",
   transaksi: "Transaksi",
+  kasir: "Kasir",
 } as const;
 
 export const HEADERS = {
@@ -31,6 +32,7 @@ export const HEADERS = {
     "foto",
   ],
   kategori: ["id", "nama", "urutan", "warna_tag", "created_at"],
+  kasir: ["id", "nama", "pin_hash", "role", "izin", "aktif", "created_at", "updated_at"],
   transaksi: [
     "id",
     "tanggal_waktu",
@@ -111,6 +113,31 @@ export function kategoriToRow(k: Kategori): (string | number)[] {
 export function rowToKategori(row: string[]): Kategori {
   const [id, nama, urutan, warnaTag, createdAt] = row;
   return { id, nama, urutan: Number(urutan) || 0, warnaTag: warnaTag ?? "brand", createdAt: createdAt ?? "" };
+}
+
+const ROLES: KasirRole[] = ["kasir", "supervisor", "manajer"];
+const PERMS: Permission[] = ["riwayat", "batalkan", "laporan", "produk"];
+
+export function kasirToRow(k: KasirProfil): (string | number)[] {
+  return [k.id, k.nama, k.pinHash, k.role, k.izin.join(","), k.aktif ? "ya" : "tidak", k.createdAt, k.updatedAt];
+}
+
+export function rowToKasir(row: string[]): KasirProfil {
+  const [id, nama, pinHash, role, izin, aktif, createdAt, updatedAt] = row;
+  return {
+    id,
+    nama: nama ?? "",
+    pinHash: pinHash ?? "",
+    role: ROLES.includes(role as KasirRole) ? (role as KasirRole) : "kasir",
+    izin: (izin ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s): s is Permission => PERMS.includes(s as Permission)),
+    // "aktif" is a plain word ("ya"/"tidak"), not TRUE/FALSE, so Sheets cannot re-type it on read
+    aktif: (aktif ?? "ya").toLowerCase() !== "tidak",
+    createdAt: createdAt ?? "",
+    updatedAt: updatedAt ?? "",
+  };
 }
 
 export function transaksiToRow(t: Transaksi): (string | number)[] {
@@ -206,7 +233,9 @@ export function settingsRowsToObject(rows: string[][]): Partial<Pengaturan> {
   if (map.tax_percent !== undefined) out.taxPercent = Number(map.tax_percent) || 0;
   if (map.service_charge_percent !== undefined) out.serviceChargePercent = Number(map.service_charge_percent) || 0;
   if (map.receipt_footer_text !== undefined) out.receiptFooterText = map.receipt_footer_text;
-  if (map.printer_pref !== undefined) out.printerPref = map.printer_pref as Pengaturan["printerPref"];
+  if (map.printer_pref !== undefined) {
+    out.printerPref = (["bluetooth", "rawbt", "browser"] as const).find((k) => k === map.printer_pref) ?? "rawbt";
+  }
   if (map.foto_storage !== undefined) out.fotoStorage = map.foto_storage === "drive" ? "drive" : "internal";
   if (map.onboarding_completed !== undefined) out.onboardingCompleted = isTrue(map.onboarding_completed);
   if (map.sheet_created_at !== undefined) out.sheetCreatedAt = map.sheet_created_at;

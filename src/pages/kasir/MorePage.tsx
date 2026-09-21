@@ -3,8 +3,9 @@ import { useAuth } from "../../hooks/useAuth";
 import { useSettings } from "../../context/SettingsContext";
 import { TopBar } from "../../components/layout/TopBar";
 import { Button } from "../../components/ui/Button";
-import { BrandMark, LogoutIcon } from "../../components/ui/icons";
-import { ADMIN_NAV, CASHIER_NAV, EXTRA_NAV, type NavItem } from "../../components/layout/navItems";
+import { BrandMark, LockIcon, LogoutIcon, UsersIcon } from "../../components/ui/icons";
+import { ADMIN_NAV, CASHIER_NAV, EXTRA_NAV, visibleNav, type NavItem } from "../../components/layout/navItems";
+import { useAccess } from "../../context/AccessContext";
 import { signOutUser } from "../../lib/auth";
 
 const TILE_TONES = [
@@ -21,6 +22,9 @@ const TILES: NavItem[] = [CASHIER_NAV[1], ...ADMIN_NAV, ...EXTRA_NAV];
 export function MorePage() {
   const { user } = useAuth();
   const { settings, plan } = useSettings();
+  const { can, isOwner, logoutKasir, kasirList } = useAccess();
+  const switchable = kasirList.some((k) => k.aktif);
+  const ownerTile: NavItem[] = isOwner ? [] : [{ to: "/admin/kasir", label: "Mode Pemilik", icon: LockIcon }];
   const navigate = useNavigate();
   const firstName = (user?.displayName ?? user?.email ?? "Kasir").split(" ")[0];
 
@@ -40,7 +44,7 @@ export function MorePage() {
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          {TILES.map((item, i) => (
+          {[...visibleNav(TILES, can), ...ownerTile].map((item, i) => (
             <button
               key={item.to}
               type="button"
@@ -67,6 +71,11 @@ export function MorePage() {
           </div>
         )}
 
+        {switchable && (
+          <Button onClick={logoutKasir} variant="soft" fullWidth icon={<UsersIcon size={18} />}>
+            Ganti Kasir / Kunci
+          </Button>
+        )}
         <Button
           onClick={async () => {
             await signOutUser();

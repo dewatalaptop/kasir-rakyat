@@ -14,17 +14,43 @@ export async function hashPassword(password: string): Promise<string> {
 
 const UNLOCK_KEY = "kasirRakyat.adminUnlocked";
 
+// Tiny pub/sub so React can re-render the moment the lock state changes
+// (useSyncExternalStore in AccessContext) — sessionStorage alone emits nothing
+// for same-tab writes.
+const listeners = new Set<() => void>();
+function emit(): void {
+  listeners.forEach((l) => l());
+}
+export function subscribeAdminLock(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 // sessionStorage, not localStorage — closing the tab/app re-locks admin.
 // A shared device left logged into Google should not also stay
 // permanently unlocked into the admin area.
 export function isAdminUnlocked(): boolean {
-  return sessionStorage.getItem(UNLOCK_KEY) === "1";
+  try {
+    return sessionStorage.getItem(UNLOCK_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 export function setAdminUnlocked(): void {
-  sessionStorage.setItem(UNLOCK_KEY, "1");
+  try {
+    sessionStorage.setItem(UNLOCK_KEY, "1");
+  } catch {
+    /* storage blocked — unlock lasts only until reload */
+  }
+  emit();
 }
 
 export function clearAdminUnlocked(): void {
-  sessionStorage.removeItem(UNLOCK_KEY);
+  try {
+    sessionStorage.removeItem(UNLOCK_KEY);
+  } catch {
+    /* nothing to clear */
+  }
+  emit();
 }

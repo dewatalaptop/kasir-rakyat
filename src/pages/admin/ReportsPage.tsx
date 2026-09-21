@@ -5,6 +5,7 @@ import { getTransaksi } from "../../lib/sheetsStore";
 import { formatRupiah } from "../../lib/format";
 import { limitsFor } from "../../lib/limits";
 import { dailySeries } from "../../lib/stats";
+import { effectiveTransaksi } from "../../lib/ledger";
 import { PAYMENT_METHOD_LABEL, type PaymentMethod } from "../../types";
 import { Card, StatCard } from "../../components/ui/Card";
 import { BarChart, type BarDatum } from "../../components/ui/BarChart";
@@ -40,7 +41,7 @@ export function ReportsPage() {
     const cutoff = new Date();
     cutoff.setHours(0, 0, 0, 0);
     cutoff.setDate(cutoff.getDate() - (days - 1));
-    const inRange = (data ?? []).filter((t) => t.status === "selesai" && new Date(t.tanggalWaktu).getTime() >= cutoff.getTime());
+    const inRange = effectiveTransaksi(data ?? []).filter((t) => new Date(t.tanggalWaktu).getTime() >= cutoff.getTime());
     const total = inRange.reduce((s, t) => s + t.total, 0);
     const itemsSold = inRange.reduce((s, t) => s + t.jumlahItem, 0);
     const byMethod = new Map<PaymentMethod, number>();

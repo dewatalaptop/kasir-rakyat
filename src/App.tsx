@@ -29,6 +29,10 @@ import { HelpPage } from "./pages/admin/HelpPage";
 import { AccountPage } from "./pages/admin/AccountPage";
 import { CartProvider } from "./context/CartContext";
 import { SettingsProvider } from "./context/SettingsContext";
+import { AccessProvider } from "./context/AccessContext";
+import { PrinterProvider } from "./context/PrinterContext";
+import { RequirePermission } from "./components/auth/RequirePermission";
+import { KasirPage } from "./pages/admin/KasirPage";
 import { ToastProvider } from "./components/ui/Toast";
 
 // "/" is public — anonymous visitors see the marketing LandingPage
@@ -56,6 +60,8 @@ export default function App() {
     <BrowserRouter>
       <ToastProvider>
         <SettingsProvider>
+          <AccessProvider>
+          <PrinterProvider>
           <CartProvider>
             <Routes>
               <Route path="/" element={<HomeRouter />} />
@@ -87,18 +93,19 @@ export default function App() {
                   <Route path="/bantuan" element={<HelpPage />} />
                   <Route path="/admin" element={<AdminAuthGuard />}>
                     <Route element={<AdminLayout />}>
-                      <Route index element={<DashboardPage />} />
-                      <Route path="produk" element={<ProductsPage />} />
-                      <Route path="produk/baru" element={<ProductEditPage />} />
-                      <Route path="produk/:id/edit" element={<ProductEditPage />} />
-                      <Route path="kategori" element={<CategoriesPage />} />
-                      <Route path="transaksi" element={<TransactionsPage />} />
-                      <Route path="transaksi/:id" element={<TransactionDetailPage />} />
-                      <Route path="laporan" element={<ReportsPage />} />
-                      <Route path="pengaturan" element={<SettingsPage />} />
-                      <Route path="pengaturan/sheets" element={<SheetsSettingsPage />} />
-                      <Route path="pengaturan/printer" element={<PrinterSettingsPage />} />
-                      <Route path="akun" element={<AccountPage />} />
+                      <Route index element={<RequirePermission need="laporan"><DashboardPage /></RequirePermission>} />
+                      <Route path="produk" element={<RequirePermission need="produk"><ProductsPage /></RequirePermission>} />
+                      <Route path="produk/baru" element={<RequirePermission need="produk"><ProductEditPage /></RequirePermission>} />
+                      <Route path="produk/:id/edit" element={<RequirePermission need="produk"><ProductEditPage /></RequirePermission>} />
+                      <Route path="kategori" element={<RequirePermission need="produk"><CategoriesPage /></RequirePermission>} />
+                      <Route path="transaksi" element={<RequirePermission need="riwayat"><TransactionsPage /></RequirePermission>} />
+                      <Route path="transaksi/:id" element={<RequirePermission need="riwayat"><TransactionDetailPage /></RequirePermission>} />
+                      <Route path="laporan" element={<RequirePermission need="laporan"><ReportsPage /></RequirePermission>} />
+                      <Route path="kasir" element={<RequirePermission need="owner"><KasirPage /></RequirePermission>} />
+                      <Route path="pengaturan" element={<RequirePermission need="owner"><SettingsPage /></RequirePermission>} />
+                      <Route path="pengaturan/sheets" element={<RequirePermission need="owner"><SheetsSettingsPage /></RequirePermission>} />
+                      <Route path="pengaturan/printer" element={<RequirePermission need="owner"><PrinterSettingsPage /></RequirePermission>} />
+                      <Route path="akun" element={<RequirePermission need="owner"><AccountPage /></RequirePermission>} />
                     </Route>
                   </Route>
                 </Route>
@@ -106,6 +113,8 @@ export default function App() {
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </CartProvider>
+          </PrinterProvider>
+          </AccessProvider>
         </SettingsProvider>
       </ToastProvider>
     </BrowserRouter>

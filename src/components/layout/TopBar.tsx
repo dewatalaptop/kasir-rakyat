@@ -2,6 +2,8 @@ import { SearchIcon, BrandMark } from "../ui/icons";
 import { useAuth } from "../../hooks/useAuth";
 import { useNow } from "../../hooks/useNow";
 import { useSettings } from "../../context/SettingsContext";
+import { useAccess } from "../../context/AccessContext";
+import { ROLE_LABEL } from "../../lib/permissions";
 
 interface TopBarProps {
   title: string;
@@ -14,6 +16,10 @@ interface TopBarProps {
 export function TopBar({ title, subtitle, search }: TopBarProps) {
   const { user } = useAuth();
   const { settings } = useSettings();
+  const { activeKasir, kasirList, logoutKasir, isOwner } = useAccess();
+  const switchable = kasirList.some((k) => k.aktif);
+  const displayName = activeKasir?.nama ?? user?.displayName ?? user?.email ?? "Kasir";
+  const displaySub = activeKasir ? ROLE_LABEL[activeKasir.role] : isOwner && switchable ? "Pemilik" : settings.businessName || "Kasir";
   const now = useNow();
   const date = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short", year: "numeric" });
   const time = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(":", ".");
@@ -46,19 +52,26 @@ export function TopBar({ title, subtitle, search }: TopBarProps) {
           <p className="text-[11px] font-medium capitalize text-[var(--text-secondary)]">{date}</p>
           <p className="font-tabular text-sm font-bold text-[var(--text)]">{time}</p>
         </div>
-        <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] py-1.5 pl-1.5 pr-3">
+        <button
+          type="button"
+          disabled={!switchable}
+          onClick={logoutKasir}
+          title={switchable ? "Ganti kasir / kunci" : undefined}
+          aria-label={switchable ? `Ganti kasir (saat ini ${displayName})` : displayName}
+          className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] py-1.5 pl-1.5 pr-3 text-left disabled:cursor-default"
+        >
           {user?.photoURL ? (
             <img src={user.photoURL} alt="" referrerPolicy="no-referrer" className="h-8 w-8 rounded-full object-cover" />
           ) : (
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-100)] text-xs font-extrabold text-[var(--brand-700)]">
-              {(user?.displayName ?? user?.email ?? "K").slice(0, 1).toUpperCase()}
+              {displayName.slice(0, 1).toUpperCase()}
             </span>
           )}
           <div className="hidden min-w-0 leading-tight sm:block">
-            <p className="max-w-[9rem] truncate text-xs font-bold text-[var(--text)]">{user?.displayName ?? user?.email ?? "Kasir"}</p>
-            <p className="max-w-[9rem] truncate text-[10px] text-[var(--text-secondary)]">{settings.businessName || "Kasir"}</p>
+            <p className="max-w-[9rem] truncate text-xs font-bold text-[var(--text)]">{displayName}</p>
+            <p className="max-w-[9rem] truncate text-[10px] text-[var(--text-secondary)]">{displaySub}{switchable ? " · Ganti" : ""}</p>
           </div>
-        </div>
+        </button>
       </div>
     </header>
   );

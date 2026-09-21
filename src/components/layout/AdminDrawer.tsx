@@ -10,20 +10,24 @@ import {
   LogoutIcon,
   ReceiptIcon,
   SettingsIcon,
+  UsersIcon,
   WalletIcon,
 } from "../ui/icons";
 import { signOutUser } from "../../lib/auth";
 import { clearAdminUnlocked } from "../../lib/adminAuth";
+import { useAccess } from "../../context/AccessContext";
+import type { Requirement } from "../../lib/permissions";
 
-const ITEMS = [
-  { to: "/admin", label: "Dashboard", icon: HomeIcon, end: true },
-  { to: "/admin/produk", label: "Produk", icon: GridIcon },
-  { to: "/admin/kategori", label: "Kategori", icon: ListIcon },
-  { to: "/admin/transaksi", label: "Transaksi", icon: ReceiptIcon },
-  { to: "/admin/laporan", label: "Laporan", icon: ChartIcon },
-  { to: "/admin/pengaturan", label: "Pengaturan", icon: SettingsIcon },
+const ITEMS: { to: string; label: string; icon: typeof HomeIcon; end?: boolean; need?: Requirement }[] = [
+  { to: "/admin", label: "Dashboard", icon: HomeIcon, end: true, need: "laporan" },
+  { to: "/admin/produk", label: "Produk", icon: GridIcon, need: "produk" },
+  { to: "/admin/kategori", label: "Kategori", icon: ListIcon, need: "produk" },
+  { to: "/admin/transaksi", label: "Transaksi", icon: ReceiptIcon, need: "riwayat" },
+  { to: "/admin/laporan", label: "Laporan", icon: ChartIcon, need: "laporan" },
+  { to: "/admin/kasir", label: "Kasir & Izin", icon: UsersIcon, need: "owner" },
+  { to: "/admin/pengaturan", label: "Pengaturan", icon: SettingsIcon, need: "owner" },
   { to: "/bantuan", label: "Bantuan", icon: HelpIcon },
-  { to: "/admin/akun", label: "Akun", icon: WalletIcon },
+  { to: "/admin/akun", label: "Akun", icon: WalletIcon, need: "owner" },
 ];
 
 // Hamburger/slide-out stack — the admin back-office has 8 destinations,
@@ -31,6 +35,7 @@ const ITEMS = [
 // own prior-POS precedent for exactly this nav-item-count tradeoff.
 export function AdminDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate();
+  const { can } = useAccess();
 
   if (!open) return null;
   return (
@@ -49,7 +54,7 @@ export function AdminDrawer({ open, onClose }: { open: boolean; onClose: () => v
           </button>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
-          {ITEMS.map((item) => (
+          {ITEMS.filter((i) => !i.need || can(i.need)).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

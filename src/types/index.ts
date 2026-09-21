@@ -21,6 +21,23 @@ export interface Produk {
 
 export type FotoStorage = "internal" | "drive";
 
+// --- Kasir (cashier) profiles -------------------------------------------------
+// People who work the register under the OWNER's single Google session. See
+// src/lib/permissions.ts for what each permission allows.
+export type KasirRole = "kasir" | "supervisor" | "manajer";
+export type Permission = "riwayat" | "batalkan" | "laporan" | "produk";
+
+export interface KasirProfil {
+  id: string;
+  nama: string;
+  pinHash: string;
+  role: KasirRole;
+  izin: Permission[];
+  aktif: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Kategori {
   id: string;
   nama: string;
@@ -72,7 +89,7 @@ export interface Pengaturan {
   taxPercent: number;
   serviceChargePercent: number;
   receiptFooterText: string;
-  printerPref: "rawbt" | "browser";
+  printerPref: "bluetooth" | "rawbt" | "browser";
   // Where NEW product photos are saved: this device's private app memory, or
   // the store's own Google Drive (visible on every cashier phone).
   fotoStorage: FotoStorage;

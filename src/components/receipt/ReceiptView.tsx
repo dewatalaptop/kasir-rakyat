@@ -1,7 +1,7 @@
 import type { Pengaturan, Transaksi } from "../../types";
 import { PAYMENT_METHOD_LABEL } from "../../types";
 import { formatDateTime, formatRupiah } from "../../lib/format";
-import { receiptNumber } from "../../lib/receipt";
+import { receiptNumber, serviceChargeOf } from "../../lib/receipt";
 import { BrandMark } from "../ui/icons";
 
 function Row({ left, right, strong = false }: { left: string; right: string; strong?: boolean }) {
@@ -42,6 +42,7 @@ export function ReceiptView({ t, p, watermark = false }: { t: Transaksi; p: Peng
       <Row left="Subtotal" right={formatRupiah(t.subtotal)} />
       {t.diskon > 0 && <Row left="Diskon" right={`-${formatRupiah(t.diskon)}`} />}
       {t.pajak > 0 && <Row left="Pajak" right={formatRupiah(t.pajak)} />}
+      {serviceChargeOf(t) > 0 && <Row left="Service" right={formatRupiah(serviceChargeOf(t))} />}
       <div className="my-2 border-t border-dashed border-gray-400" />
       <Row left="TOTAL" right={formatRupiah(t.total)} strong />
       <Row left="Bayar" right={PAYMENT_METHOD_LABEL[t.metodeBayar]} />

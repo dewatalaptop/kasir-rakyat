@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { useSettings } from "../../context/SettingsContext";
-import { hashPassword, isAdminUnlocked, setAdminUnlocked } from "../../lib/adminAuth";
+import { useAccess } from "../../context/AccessContext";
+import { hashPassword, setAdminUnlocked } from "../../lib/adminAuth";
+import { hasAnyAdminPermission } from "../../lib/permissions";
 import { Button } from "../ui/Button";
 import { FullPageSpinner } from "../ui/Spinner";
 
@@ -10,17 +12,23 @@ import { FullPageSpinner } from "../ui/Spinner";
 // (pass through). See src/lib/adminAuth.ts for why this is
 // sessionStorage-scoped, and its own comment for what this is and isn't
 // meant to defend against.
+//
+// A registered kasir with at least one admin permission (supervisor/manajer,
+// signed in with their PIN) also passes — each admin page then checks its OWN
+// permission (see RequirePermission). Owner-only pages never open for them.
 export function AdminAuthGuard() {
   const { settings, updateSettings, loading } = useSettings();
-  const [unlocked, setUnlocked] = useState(isAdminUnlocked());
+  const { isOwner, activeKasir } = useAccess();
 
   if (loading) return <FullPageSpinner />;
-  if (unlocked) return <Outlet />;
+  if (isOwner || hasAnyAdminPermission(activeKasir)) return <Outlet />;
 
+  // Unlocking/creating the password flips isOwner (see adminAuth.ts pub/sub),
+  // which re-renders this guard straight into the <Outlet />.
   return settings.adminPasswordHash ? (
-    <UnlockPrompt onUnlock={() => setUnlocked(true)} />
+    <UnlockPrompt onUnlock={() => undefined} />
   ) : (
-    <SetupPrompt onDone={() => setUnlocked(true)} updateSettings={updateSettings} />
+    <SetupPrompt onDone={() => undefined} updateSettings={updateSettings} />
   );
 }
 

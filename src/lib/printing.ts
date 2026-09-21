@@ -1,5 +1,5 @@
 import type { Pengaturan, Transaksi } from "../types";
-import { buildReceiptText } from "./receipt";
+import { WIDTH_58MM, buildReceiptText } from "./receipt";
 
 // Default path: RawBT (already common among Indonesian UMKM for thermal
 // printers) handles the physical printing via its own URL scheme — no
@@ -7,8 +7,8 @@ import { buildReceiptText } from "./receipt";
 // BLE pairing is a later Android (Capacitor) milestone, not v1 — this is
 // the deliberate extension point for it (see plan: "Explicitly out of
 // scope for v1").
-export function printViaRawBT(t: Transaksi, p: Pengaturan, watermark = false): void {
-  const text = buildReceiptText(t, p, watermark);
+export function printViaRawBT(t: Transaksi, p: Pengaturan, watermark = false, width = WIDTH_58MM): void {
+  const text = buildReceiptText(t, p, watermark, width);
   const url = `rawbt://print?text=${encodeURIComponent(text)}`;
   const link = document.createElement("a");
   link.href = url;
@@ -18,8 +18,8 @@ export function printViaRawBT(t: Transaksi, p: Pengaturan, watermark = false): v
   document.body.removeChild(link);
 }
 
-export async function copyReceiptToClipboard(t: Transaksi, p: Pengaturan, watermark = false): Promise<void> {
-  const text = buildReceiptText(t, p, watermark);
+export async function copyReceiptToClipboard(t: Transaksi, p: Pengaturan, watermark = false, width = WIDTH_58MM): Promise<void> {
+  const text = buildReceiptText(t, p, watermark, width);
   await navigator.clipboard.writeText(text);
 }
 
