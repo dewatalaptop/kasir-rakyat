@@ -47,6 +47,16 @@ export function HelpPage() {
           </Button>
         </div>
 
+        <div className="shape-card card-shadow flex flex-wrap items-center gap-3 border border-[var(--border)] bg-[var(--surface)] p-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-[var(--text)]">Ada yang tidak berjalan?</p>
+            <p className="text-xs text-[var(--text-secondary)]">Kirim laporan singkat — langsung sampai ke tim pengembang, tanpa data pribadi.</p>
+          </div>
+          <Button onClick={() => window.BugReporter?.openDialog()} variant="soft">
+            Laporkan Masalah
+          </Button>
+        </div>
+
         <QuickStartCard alwaysShow />
 
         <label className="relative">

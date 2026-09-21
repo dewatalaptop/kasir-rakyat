@@ -15,6 +15,13 @@
       rel="stylesheet"
     />
     <title>Kasir Rakyat — Aplikasi Kasir Untuk Semua</title>
+    <!-- Automatic crash reporting to the App Builder (see ai-app-builder/templates/shared/bug-reporter).
+         A plain script BEFORE the bundle so even a bundle that fails to load gets reported.
+         Bump "version" on every release: a fixed bug that returns is then recognised as a regression. -->
+    <script src="/bug-reporter.js"></script>
+    <script>
+      BugReporter.init({ appId: "kasir-rakyat", key: "a9a01181c4b3672db0c843986617537c", version: "1.1.0" });
+    </script>
   </head>
   <body>
     <div id="root"></div>
