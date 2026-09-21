@@ -10,7 +10,7 @@ import {
   onSheetsProblem,
 } from "../lib/sheets";
 import { ensureAppSpreadsheet, getSettings, setSettings as saveSettings } from "../lib/sheetsStore";
-import { checkLicense, type PlanStatus } from "../lib/license";
+import { checkLicense, type LicenseResult, type PlanStatus } from "../lib/license";
 import { flushPendingQueue } from "../lib/checkout";
 import { pendingCount } from "../lib/pendingQueue";
 import { describeError } from "../lib/errors";
@@ -70,6 +70,9 @@ interface SettingsContextValue {
   plan: PlanStatus;
   planExpiresAt: string | null;
   planLoading: boolean;
+  // Re-ask the server (e.g. right after a payment is approved). A failed check
+  // never downgrades a plan that is currently active.
+  refreshPlan: () => Promise<LicenseResult>;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -231,6 +234,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
+  const refreshPlan = useCallback(async () => {
+    const result = await checkLicense();
+    if (result.failed && result.plan === "gratis") return result; // keep whatever we had
+    setPlan(result.plan);
+    setPlanExpiresAt(result.expiresAt);
+    setPlanLoading(false);
+    return result;
+  }, []);
+
   const usable = !!(accessToken && spreadsheetId) && issue !== "reauth";
 
   // Sales queued while offline / disconnected sync themselves as soon as the
@@ -345,6 +357,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         plan,
         planExpiresAt,
         planLoading,
+        refreshPlan,
         reconnect,
       }}
     >

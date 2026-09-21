@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSettings } from "./SettingsContext";
 import { useAuth } from "../hooks/useAuth";
 import { getKasir, saveKasir } from "../lib/sheetsStore";
@@ -81,6 +82,7 @@ function readActiveId(): string | null {
 export function AccessProvider({ children }: { children: ReactNode }) {
   const { accessToken, spreadsheetId, issue } = useSettings();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [kasirList, setKasirList] = useState<KasirProfil[]>(readCache);
   const [kasirLoaded, setKasirLoaded] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(readActiveId);
@@ -155,7 +157,10 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     }
     setActiveId(null);
     clearAdminUnlocked();
-  }, []);
+    // Land on the cashier screen, where the PIN gate shows — not on whatever admin
+    // page was open (which would only ask for the owner password).
+    navigate("/kasir", { replace: true });
+  }, [navigate]);
 
   const saveKasirProfil = useCallback(
     async (k: KasirProfil) => {
