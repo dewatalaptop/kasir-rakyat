@@ -54,6 +54,47 @@ itu sendiri.
   `localStorage["kasirRakyat.devPlatform"]="android"` (hanya berlaku di dev
   build).
 
+## Kasir & Izin (banyak kasir dengan batasan fungsi)
+
+Pemilik (login Google + password admin) mendaftarkan kasir di **Admin > Kasir & Izin**:
+nama, peran (Kasir / Supervisor / Manajer) atau izin kustom, dan PIN 4-6 angka. Setelah
+ada kasir aktif, layar Kasir meminta pilih nama + PIN, dan setiap transaksi tercatat atas
+nama kasir itu. Izin yang bisa diberikan: lihat semua riwayat, batalkan transaksi, lihat
+laporan/dashboard, kelola produk & kategori. Pengaturan, Kasir & Izin, Printer, koneksi
+Sheets, dan Langganan **selalu khusus pemilik**. Versi gratis maks. 2 kasir aktif.
+
+- Profil tersimpan di tab `Kasir` Google Sheets pemilik (dibuat otomatis untuk sheet lama);
+  PIN hanya disimpan sebagai hash SHA-256 bergaram per profil.
+- 5 PIN salah berturut-turut mengunci profil itu 30 dtk (berlipat, maks. 5 menit).
+- **Batas yang jujur**: ini pembatas untuk register bersama, bukan keamanan tingkat bank.
+  Semua kasir memakai sesi Google pemilik di perangkat itu, dan PIN 4-6 angka bisa ditebak
+  offline oleh orang teknis yang membaca Sheet. Cocok untuk warung/resto/toko, bukan untuk
+  melindungi dari karyawan yang berniat jahat dan paham teknis.
+
+## Printer thermal
+
+Tiga cara cetak (Admin > Pengaturan > Printer): **Bluetooth langsung** (aplikasi Android,
+printer Bluetooth LE, ESC/POS 58/80mm, cetak otomatis opsional), **RawBT** (printer
+Bluetooth klasik), dan **cetak browser**. Struk selalu ASCII aman-printer (tanpa NBSP/emoji),
+kata panjang dipotong, dan baris Service ikut tercetak. Printer Bluetooth *klasik* (SPP)
+tidak bisa dijangkau lewat BLE — pakai RawBT untuk itu. Diuji terhadap printer ESC/POS
+virtual; **belum diuji pada printer fisik**.
+
+## Langganan berbayar (transfer manual + kode unik)
+
+Akun & Langganan > Upgrade membuat permintaan: harga + kode unik 1-999 (mis. Rp50.123).
+Pemilik aplikasi melihatnya di dashboard App Builder tab **Pembayaran** dan menyetujuinya
+dengan dua ketukan; lisensi aktif seketika dan aplikasi mendeteksinya sendiri. Hasil
+konfirmasi server yang terakhir dipakai sampai 72 jam bila server tak terjangkau (tidak
+pernah melewati masa berlakunya). Backend: `getStudioOffer`, `requestStudioUpgrade`,
+`cancelMyStudioUpgrade` di ai-app-builder.
+
+## Pengujian
+
+`npm test` menjalankan 116 uji: logika murni + integrasi seluruh aplikasi terhadap Sheets,
+Cloud Functions, dan printer BLE tiruan (empat jenis usaha, peran & izin kasir, kunci PIN,
+pembatalan transaksi, antrean offline, printer, alur upgrade, gating fitur berbayar).
+
 ## Aplikasi Android (APK)
 
 Cangkang native tipis (Capacitor) yang memuat web app live

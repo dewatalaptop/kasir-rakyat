@@ -27,7 +27,14 @@ const probe = `(async () => {
   out.platform = C && C.getPlatform();
   out.native = C && C.isNativePlatform();
   out.plugins = {};
-  for (const n of ["Camera", "Filesystem", "FirebaseAuthentication"]) out.plugins[n] = C.isPluginAvailable(n);
+  for (const n of ["Camera", "Filesystem", "FirebaseAuthentication", "BluetoothLe"]) out.plugins[n] = C.isPluginAvailable(n);
+  // Real native calls: the BLE plugin must answer (on an emulator with no Bluetooth
+  // hardware the point is that it fails with a readable message instead of crashing),
+  // and the Camera plugin must report its permission state.
+  try { await C.nativePromise("BluetoothLe", "initialize", {}); out.bleInitialize = "ok"; }
+  catch (e) { out.bleInitialize = "error: " + String((e && e.message) || e); }
+  try { out.cameraPermissions = await C.nativePromise("Camera", "checkPermissions", {}); }
+  catch (e) { out.cameraPermissions = "error: " + String((e && e.message) || e); }
   try {
     const b64 = btoa("kasir-rakyat-native-test");
     await C.nativePromise("Filesystem", "writeFile", { path: "produk-foto/emu-test.jpg", data: b64, directory: "DATA", recursive: true });
