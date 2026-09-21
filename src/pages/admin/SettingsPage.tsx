@@ -4,7 +4,9 @@ import { useSettings } from "../../context/SettingsContext";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../components/ui/Toast";
 import { BUSINESS_TYPES } from "../../lib/businessType";
-import { hashPassword } from "../../lib/adminAuth";
+import { useAccess } from "../../context/AccessContext";
+import { clearAdminUnlocked, hashPassword } from "../../lib/adminAuth";
+import { OwnerPasswordForm, OWNER_PASSWORD_MIN } from "../../components/auth/OwnerPasswordForm";
 import { PhotoStorageCard } from "../../components/admin/PhotoStorageCard";
 
 export function SettingsPage() {
@@ -121,23 +123,31 @@ export function SettingsPage() {
           Pengaturan Printer
         </Button>
       </div>
-      <ChangePasswordForm />
+      <SecurityCard />
     </div>
   );
 }
 
-function ChangePasswordForm() {
+function SecurityCard() {
   const { settings, updateSettings } = useSettings();
+  const { hasOwnerPassword, kasirList } = useAccess();
   const { show } = useToast();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
+  const hasActiveKasir = kasirList.some((k) => k.aktif);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function checkCurrent(): Promise<boolean> {
+    if ((await hashPassword(current)) === settings.adminPasswordHash) return true;
+    show("Password saat ini salah.", "error");
+    return false;
+  }
+
+  async function handleChange(e: React.FormEvent) {
     e.preventDefault();
-    if (next.length < 4) {
-      show("Password baru minimal 4 karakter.", "error");
+    if (next.length < OWNER_PASSWORD_MIN) {
+      show(`Password baru minimal ${OWNER_PASSWORD_MIN} karakter.`, "error");
       return;
     }
     if (next !== confirm) {
@@ -146,17 +156,12 @@ function ChangePasswordForm() {
     }
     setBusy(true);
     try {
-      const currentHash = await hashPassword(current);
-      if (currentHash !== settings.adminPasswordHash) {
-        show("Password saat ini salah.", "error");
-        return;
-      }
-      const nextHash = await hashPassword(next);
-      await updateSettings({ admin_password_hash: nextHash });
+      if (!(await checkCurrent())) return;
+      await updateSettings({ admin_password_hash: await hashPassword(next) });
       setCurrent("");
       setNext("");
       setConfirm("");
-      show("Password admin diperbarui.", "success");
+      show("Password pemilik diperbarui.", "success");
     } catch (err) {
       show(err instanceof Error ? err.message : "Gagal mengubah password.", "error");
     } finally {
@@ -164,34 +169,64 @@ function ChangePasswordForm() {
     }
   }
 
+  async function handleRemove() {
+    setBusy(true);
+    try {
+      if (!(await checkCurrent())) return;
+      await updateSettings({ admin_password_hash: "" });
+      setCurrent("");
+      show("Password pemilik dihapus. Menu pemilik terbuka tanpa password.", "success");
+    } catch (err) {
+      show(err instanceof Error ? err.message : "Gagal menghapus password.", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const input = "shape-card border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm";
+
+  if (!hasOwnerPassword) {
+    return (
+      <section className="flex flex-col gap-2 border-t border-[var(--border-soft)] pt-3" aria-label="Keamanan">
+        <h2 className="font-display text-sm font-bold text-[var(--text)]">Keamanan</h2>
+        <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+          Saat ini <b>belum ada password</b>: siapa pun yang memegang perangkat ini otomatis menjadi pemilik dan bisa membuka semua menu. Itu aman kalau kamu berjualan sendiri.
+          Kalau ada karyawan yang memakai kasir, buat password pemilik supaya mereka hanya bisa berjualan.
+        </p>
+        <OwnerPasswordForm />
+      </section>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 border-t border-[var(--border-soft)] pt-3">
+    <section className="flex flex-col gap-3 border-t border-[var(--border-soft)] pt-3" aria-label="Keamanan">
       <h2 className="font-display text-sm font-bold text-[var(--text)]">Keamanan</h2>
-      <p className="text-xs text-[var(--text-secondary)]">Ubah password admin — ini yang memisahkan mode Kasir dari menu Admin.</p>
-      <input
-        type="password"
-        value={current}
-        onChange={(e) => setCurrent(e.target.value)}
-        placeholder="Password saat ini"
-        className="shape-card border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm"
-      />
-      <input
-        type="password"
-        value={next}
-        onChange={(e) => setNext(e.target.value)}
-        placeholder="Password baru"
-        className="shape-card border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm"
-      />
-      <input
-        type="password"
-        value={confirm}
-        onChange={(e) => setConfirm(e.target.value)}
-        placeholder="Ulangi password baru"
-        className="shape-card border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm"
-      />
-      <Button type="submit" disabled={busy || !current || !next || !confirm} variant="secondary" fullWidth>
-        {busy ? "Menyimpan..." : "Ubah Password Admin"}
+      <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+        Password pemilik memisahkan mode Kasir dari menu Admin. Tidak ada username — cukup password ini.
+      </p>
+      <Button variant="ghost" fullWidth onClick={() => { clearAdminUnlocked(); }}>
+        Kunci sekarang
       </Button>
-    </form>
+      <form onSubmit={handleChange} className="flex flex-col gap-2">
+        <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} placeholder="Password saat ini" autoComplete="current-password" aria-label="Password saat ini" className={input} />
+        <input type="password" value={next} onChange={(e) => setNext(e.target.value)} placeholder="Password baru" autoComplete="new-password" aria-label="Password baru" className={input} />
+        <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Ulangi password baru" autoComplete="new-password" aria-label="Ulangi password baru" className={input} />
+        <Button type="submit" disabled={busy || !current || !next || !confirm} variant="secondary" fullWidth>
+          {busy ? "Menyimpan..." : "Ubah Password Pemilik"}
+        </Button>
+      </form>
+      {hasActiveKasir ? (
+        <p className="text-[11px] text-[var(--text-faint)]">Password tidak bisa dihapus selama masih ada kasir aktif — nonaktifkan semua kasir dulu.</p>
+      ) : (
+        <button
+          type="button"
+          onClick={handleRemove}
+          disabled={busy || !current}
+          className="self-start text-xs font-bold text-[var(--error-text)] disabled:opacity-40"
+        >
+          Hapus password (isi password saat ini di atas)
+        </button>
+      )}
+    </section>
   );
 }

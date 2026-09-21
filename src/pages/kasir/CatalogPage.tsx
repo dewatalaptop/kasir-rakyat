@@ -60,7 +60,7 @@ export function CatalogPage() {
         )}
         <div className="h-16 xl:hidden" aria-hidden />
       </div>
-      <aside className="hidden border-l border-[var(--border)] xl:block xl:h-screen">
+      <aside data-tour="cart" className="hidden border-l border-[var(--border)] xl:block xl:h-screen">
         <CartPanel />
       </aside>
       <CartSummaryBar />

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { PageTip } from "../../components/help/PageTip";
 import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
 import { getTransaksi } from "../../lib/sheetsStore";
@@ -16,6 +17,9 @@ export function TransactionsPage() {
   return (
     <div className="flex flex-col gap-3">
       <h1 className="font-display text-lg font-bold text-[var(--text)]">Transaksi</h1>
+      <PageTip id="transaksi-batal" title="Salah input?">
+        Buka transaksinya lalu tekan Batalkan. Riwayat asli tidak dihapus — yang ditambahkan adalah catatan pembatalan, dan omzet otomatis tidak menghitungnya.
+      </PageTip>
       {loading ? (
         <div className="flex justify-center py-8 text-[var(--brand-500)]">
           <Spinner />

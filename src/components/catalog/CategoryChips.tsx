@@ -26,7 +26,7 @@ export function CategoryChips({
   onChange: (id: string | null) => void;
 }) {
   return (
-    <div className="scrollbar-hide flex gap-2 overflow-x-auto px-4 py-2 lg:px-6">
+    <div data-tour="chips" className="scrollbar-hide flex gap-2 overflow-x-auto px-4 py-2 lg:px-6">
       <Chip active={active === null} label="Semua" onClick={() => onChange(null)} />
       {kategori.map((k) => (
         <Chip key={k.id} active={active === k.id} label={k.nama} onClick={() => onChange(k.id)} />

@@ -65,7 +65,7 @@ describe("legacy shop (no cashiers registered yet)", () => {
   it("wrong owner password is refused, right one opens everything", async () => {
     m = await mountApp({ biz: "warung" });
     goto("/admin");
-    const field = await screen.findByPlaceholderText("Password admin");
+    const field = await screen.findByPlaceholderText("Password pemilik");
     await m.user.type(field, "salah");
     await m.user.click(screen.getByRole("button", { name: "Masuk" }));
     await screen.findByText("Password salah.");
@@ -74,6 +74,105 @@ describe("legacy shop (no cashiers registered yet)", () => {
     await m.user.click(screen.getByRole("button", { name: "Masuk" }));
     await screen.findByText(/Halo, /);
     await waitFor(() => expect(navLabels()).toEqual(expect.arrayContaining(["Dashboard", "Produk", "Kategori", "Transaksi", "Laporan", "Kasir & Izin", "Pengaturan", "Akun & Langganan"])));
+  });
+});
+
+// A brand-new shop: the owner never created a password. Asking for one (worse:
+// "username and password") on the first visit to the admin menu was the most
+// confusing moment of the app — so a shop with nobody to keep out simply runs
+// as owner, and the password becomes a deliberate step taken before cashiers.
+const noOwnerPassword = (sheets: { tables: Record<string, string[][]> }) => {
+  const row = sheets.tables.Pengaturan.find((r) => r[0] === "admin_password_hash")!;
+  row[1] = "";
+};
+const hashInSheet = (mm: Mounted) => mm.sheets.tables.Pengaturan.find((r) => r[0] === "admin_password_hash")?.[1] ?? "";
+
+describe("first-time owner (no password created yet)", () => {
+  it("opens the admin menus directly — no password prompt, no owner-mode detour", async () => {
+    m = await mountApp({ biz: "warung", seed: noOwnerPassword });
+    await waitFor(() => expect(navLabels()).toEqual(expect.arrayContaining(["Dashboard", "Produk", "Pengaturan", "Kasir & Izin", "Akun & Langganan"])));
+    expect(navLabels()).not.toContain("Mode Pemilik");
+    goto("/admin/pengaturan");
+    await screen.findByText("Pengaturan", { selector: "h1" });
+    expect(screen.queryByPlaceholderText("Password pemilik")).toBeNull();
+  });
+
+  it("Pengaturan > Keamanan explains there is no password and can create one (no 'current password' needed)", async () => {
+    m = await mountApp({ biz: "warung", seed: noOwnerPassword, path: "/admin/pengaturan" });
+    await screen.findByText(/belum ada password/);
+    expect(screen.queryByLabelText("Password saat ini")).toBeNull();
+    await m.user.type(screen.getByLabelText("Password pemilik baru"), "rahasia1");
+    await m.user.type(screen.getByLabelText("Ulangi password pemilik"), "rahasia2");
+    await m.user.click(screen.getByRole("button", { name: "Simpan Password" }));
+    await screen.findByText("Konfirmasi password tidak cocok.");
+    expect(hashInSheet(m)).toBe("");
+    await m.user.clear(screen.getByLabelText("Ulangi password pemilik"));
+    await m.user.type(screen.getByLabelText("Ulangi password pemilik"), "rahasia1");
+    await m.user.click(screen.getByRole("button", { name: "Simpan Password" }));
+    await waitFor(() => expect(hashInSheet(m!)).toMatch(/^[0-9a-f]{64}$/));
+    // the section flips to change/lock mode, and the owner is not asked again this session
+    await screen.findByRole("button", { name: "Kunci sekarang" });
+    expect(screen.queryByPlaceholderText("Password pemilik")).toBeNull();
+  });
+
+  it("'Kunci sekarang' locks the owner menus until the new password is entered", async () => {
+    m = await mountApp({ biz: "warung", seed: noOwnerPassword, path: "/admin/pengaturan" });
+    await screen.findByText(/belum ada password/);
+    await m.user.type(screen.getByLabelText("Password pemilik baru"), "rahasia1");
+    await m.user.type(screen.getByLabelText("Ulangi password pemilik"), "rahasia1");
+    await m.user.click(screen.getByRole("button", { name: "Simpan Password" }));
+    await m.user.click(await screen.findByRole("button", { name: "Kunci sekarang" }));
+    await screen.findByRole("heading", { name: "Masuk sebagai Pemilik" });
+    expect(screen.getByText(/Tidak ada username/)).toBeTruthy();
+    await m.user.type(screen.getByPlaceholderText("Password pemilik"), "rahasia1");
+    await m.user.click(screen.getByRole("button", { name: "Masuk" }));
+    await screen.findByText("Pengaturan", { selector: "h1" });
+  });
+
+  it("the first cashier cannot be registered until an owner password exists", async () => {
+    m = await mountApp({ biz: "warung", paid: true, seed: noOwnerPassword, path: "/admin/kasir" });
+    await screen.findByText("Kasir & Izin", { selector: "h1" });
+    await m.user.click(screen.getAllByRole("button", { name: /^(\+ )?Tambah/ })[0]);
+    await screen.findByText("Buat password pemilik dulu");
+    expect(screen.queryByText("Tambah Kasir", { selector: "h2" })).toBeNull();
+    await m.user.type(screen.getByLabelText("Password pemilik baru"), "pemilik9");
+    await m.user.type(screen.getByLabelText("Ulangi password pemilik"), "pemilik9");
+    await m.user.click(screen.getByRole("button", { name: /Simpan & Lanjut Tambah Kasir/ }));
+    await screen.findByText("Tambah Kasir", { selector: "h2" }); // straight on to the cashier form
+    expect(hashInSheet(m)).toMatch(/^[0-9a-f]{64}$/);
+    await m.user.type(screen.getByPlaceholderText("Contoh: Dewi"), "Dewi");
+    await m.user.type(screen.getByPlaceholderText("••••"), "1234");
+    await m.user.click(screen.getByRole("button", { name: "Simpan" }));
+    await screen.findByText("Dewi disimpan.");
+    // now that a cashier exists the owner menus are locked for whoever is at the register
+    await m.user.click(screen.getAllByRole("button", { name: /Ganti Kasir/ })[0]);
+    await screen.findByText("Siapa yang bertugas?");
+    goto("/admin/pengaturan");
+    await screen.findByRole("heading", { name: "Masuk sebagai Pemilik" });
+  });
+
+  it("with a password and a cashier, the password can be changed but not removed", async () => {
+    m = await mountApp({ biz: "warung", paid: true });
+    await registerCashiers(m, [DEWI]);
+    goto("/admin/pengaturan");
+    await screen.findByLabelText("Password saat ini");
+    expect(screen.getByText(/tidak bisa dihapus selama masih ada kasir aktif/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Hapus password/ })).toBeNull();
+  });
+
+  it("without cashiers the password can be removed again (needs the current password)", async () => {
+    m = await mountApp({ biz: "warung" });
+    await unlockOwner(m, "/admin/pengaturan");
+    await screen.findByRole("button", { name: /Hapus password/ });
+    await m.user.type(screen.getByLabelText("Password saat ini"), "salah-salah");
+    await m.user.click(screen.getByRole("button", { name: /Hapus password/ }));
+    await screen.findByText("Password saat ini salah.");
+    expect(hashInSheet(m)).not.toBe("");
+    await m.user.clear(screen.getByLabelText("Password saat ini"));
+    await m.user.type(screen.getByLabelText("Password saat ini"), ownerPassword);
+    await m.user.click(screen.getByRole("button", { name: /Hapus password/ }));
+    await waitFor(() => expect(hashInSheet(m!)).toBe(""));
+    await screen.findByText(/belum ada password/);
   });
 });
 
@@ -132,7 +231,7 @@ describe("PIN gate", () => {
     await lockRegister(m);
     expect(path()).toBe("/kasir"); // not stranded on an admin page
     await m.user.click(screen.getByRole("button", { name: "Masuk sebagai pemilik" }));
-    await m.user.type(screen.getByPlaceholderText("Password admin"), ownerPassword);
+    await m.user.type(screen.getByPlaceholderText("Password pemilik"), ownerPassword);
     await m.user.click(screen.getByRole("button", { name: /Masuk sebagai Pemilik/ }));
     await waitFor(() => expect(screen.queryByText("Siapa yang bertugas?")).toBeNull());
   });
@@ -185,7 +284,7 @@ describe("what each role can do", () => {
 
     // admin URLs ask for the OWNER password, not the cashier's PIN
     goto("/admin/laporan");
-    await screen.findByText("Masuk Mode Admin");
+    await screen.findByRole("heading", { name: "Masuk sebagai Pemilik" });
   });
 
   it("SUPERVISOR (Budi): history + void only — reports, products, settings and Kasir & Izin are closed", async () => {

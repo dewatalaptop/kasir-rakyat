@@ -7,12 +7,22 @@ import { STUDIO_PRODUCT_ID } from "./license";
 // app provider approves it in their dashboard (which flips the license on).
 // See ai-app-builder/functions/src/index.ts (getStudioOffer & friends).
 
-export interface BankInfo {
+export interface BankAccount {
   bankName: string;
   accountNumber: string;
   accountName: string;
+}
+
+// The top-level account fields mirror accounts[0] (older servers only send those).
+export interface BankInfo extends BankAccount {
+  accounts?: BankAccount[];
   whatsapp: string;
   note: string;
+}
+
+// Every account the buyer may pay into; the first is the primary.
+export function bankAccounts(bank: BankInfo): BankAccount[] {
+  return bank.accounts && bank.accounts.length > 0 ? bank.accounts : [bank];
 }
 
 export interface PendingTransfer {

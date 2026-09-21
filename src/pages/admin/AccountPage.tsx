@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PageTip } from "../../components/help/PageTip";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useSettings } from "../../context/SettingsContext";
@@ -9,7 +10,7 @@ import { useToast } from "../../components/ui/Toast";
 import { CheckIcon, LogoutIcon } from "../../components/ui/icons";
 import { signOutUser } from "../../lib/auth";
 import { formatDate, formatRupiah } from "../../lib/format";
-import { billingLabel, cancelUpgrade, canRenew, daysLeft, fetchOffer, requestUpgrade, upgradeErrorMessage, type UpgradeOffer } from "../../lib/upgrade";
+import { bankAccounts, billingLabel, cancelUpgrade, canRenew, daysLeft, fetchOffer, requestUpgrade, upgradeErrorMessage, type UpgradeOffer } from "../../lib/upgrade";
 
 const BENEFITS = [
   "Produk tanpa batas (gratis: 20 produk aktif)",
@@ -30,6 +31,9 @@ export function AccountPage() {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <h1 className="font-display text-xl font-extrabold text-[var(--text)]">Akun & Langganan</h1>
+      <PageTip id="akun-kode-unik" title="Cara upgrade">
+        Pilih paket, lalu transfer sesuai nominal yang tampil — angka terakhirnya adalah kode unik yang membuat pembayaranmu dikenali. Aplikasi berganti ke versi berbayar sendiri setelah dikonfirmasi.
+      </PageTip>
       <Card className="flex items-center gap-3">
         {user?.photoURL && <img src={user.photoURL} alt="" referrerPolicy="no-referrer" className="h-12 w-12 rounded-full" />}
         <div className="min-w-0">
@@ -228,12 +232,20 @@ function SubscriptionCard({ planExpiresAt }: { planExpiresAt: string | null }) {
 
           {bank ? (
             <div className="rounded-xl bg-[var(--surface)] p-3 text-sm">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--text-faint)]">Ke rekening</p>
-              <p className="font-bold text-[var(--text)]">{bank.bankName}</p>
-              <p className="font-tabular text-lg font-extrabold tracking-wide text-[var(--text)]">{bank.accountNumber}</p>
-              <p className="text-xs text-[var(--text-secondary)]">a.n. {bank.accountName}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--text-faint)]">
+                {bankAccounts(bank).length > 1 ? "Ke salah satu rekening ini" : "Ke rekening"}
+              </p>
+              {bankAccounts(bank).map((acc, i) => (
+                <div key={acc.accountNumber} className={i > 0 ? "mt-3 border-t border-[var(--border-soft)] pt-3" : "mt-1"}>
+                  <p className="font-bold text-[var(--text)]">{acc.bankName}</p>
+                  <p className="font-tabular text-lg font-extrabold tracking-wide text-[var(--text)]">{acc.accountNumber}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">a.n. {acc.accountName}</p>
+                  <div className="mt-1.5">
+                    <CopyButton value={acc.accountNumber.replace(/\D/g, "")} label={bankAccounts(bank).length > 1 ? `Salin no. ${acc.bankName}` : "Salin no. rekening"} />
+                  </div>
+                </div>
+              ))}
               <div className="mt-2 flex flex-wrap gap-2">
-                <CopyButton value={bank.accountNumber.replace(/\D/g, "")} label="Salin no. rekening" />
                 {bank.whatsapp && (
                   <a
                     href={`https://wa.me/${bank.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, saya sudah transfer ${formatRupiah(pending.totalAmount)} untuk ${product.brandName} (${user?.email ?? ""}).`)}`}

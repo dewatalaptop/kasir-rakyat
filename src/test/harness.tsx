@@ -6,6 +6,7 @@ import { storeAccessToken } from "../lib/sheets";
 import { createFakeSheets, NAMES, OWNER_PASSWORD, type Biz, type FakeSheets } from "./mocks/fakeSheets";
 import { createFakeServer, type FakeServer } from "./mocks/fakeServer";
 import { printer } from "./mocks/fakeBle";
+import { GUIDE_KEY, tourStore } from "../lib/guide";
 
 // Hoisted holder so the vi.mock factories in each test file can reach the
 // current fake server (factories run before imports).
@@ -28,12 +29,17 @@ export async function mountApp(opts: {
   // extra rows to seed into a sheet tab before the app boots
   seed?: (sheets: FakeSheets) => void;
   serverOffline?: boolean;
+  // Leave the first-run tour/welcome enabled (off by default so unrelated tests
+  // are not interrupted by the welcome dialog).
+  tour?: boolean;
 }): Promise<Mounted> {
   cleanup();
   localStorage.clear();
   sessionStorage.clear();
   printer.reset();
+  tourStore.set(false);
   if (opts.android) localStorage.setItem("kasirRakyat.devPlatform", "android");
+  if (!opts.tour) localStorage.setItem(GUIDE_KEY, JSON.stringify({ marked: [], checklistHidden: false, tourSeen: true, tipsClosed: [] }));
 
   const sheets = await createFakeSheets(opts.biz);
   sheets.install();
@@ -108,7 +114,7 @@ export const ownerPassword = OWNER_PASSWORD;
 // Owner mode = admin password (through the real "Mode Pemilik" entry).
 export async function unlockOwner(m: Mounted, to = "/admin/kasir") {
   goto(to);
-  const field = await screen.findByPlaceholderText("Password admin");
+  const field = await screen.findByPlaceholderText("Password pemilik");
   await m.user.type(field, OWNER_PASSWORD);
   await m.user.click(screen.getByRole("button", { name: /^Masuk/ }));
 }

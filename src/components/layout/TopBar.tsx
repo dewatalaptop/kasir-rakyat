@@ -36,7 +36,7 @@ export function TopBar({ title, subtitle, search }: TopBarProps) {
         </div>
       </div>
       {search && (
-        <label className="relative order-3 w-full min-w-0 sm:order-none sm:mx-2 sm:w-auto sm:min-w-[11rem] sm:flex-1 sm:max-w-md">
+        <label data-tour="search" className="relative order-3 w-full min-w-0 sm:order-none sm:mx-2 sm:w-auto sm:min-w-[11rem] sm:flex-1 sm:max-w-md">
           <SearchIcon size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
           <input
             type="search"

@@ -31,7 +31,16 @@ interface AccessValue {
   kasirList: KasirProfil[];
   kasirLoaded: boolean;
   activeKasir: KasirProfil | null;
+  // Owner privileges: the password was entered this session, OR the shop has
+  // neither an owner password nor any cashier yet (nobody to keep out — see
+  // `ownerByDefault` below).
   isOwner: boolean;
+  // The owner has created a password (Pengaturan > Keamanan). Until then a
+  // single-user shop simply runs as owner with no prompts.
+  hasOwnerPassword: boolean;
+  // Settings and the cashier list are both known (from the sheet or an earlier
+  // real read), so "no password / no cashiers" can be trusted.
+  accessReady: boolean;
   // Registered kasir exist, and nobody (kasir or owner) has identified yet.
   needsPin: boolean;
   // Name recorded on a sale: the working kasir, else the signed-in Google user.
@@ -80,13 +89,14 @@ function readActiveId(): string | null {
 }
 
 export function AccessProvider({ children }: { children: ReactNode }) {
-  const { accessToken, spreadsheetId, issue } = useSettings();
+  const { accessToken, spreadsheetId, issue, settings, settingsKnown, loading: settingsLoading } = useSettings();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [kasirList, setKasirList] = useState<KasirProfil[]>(readCache);
   const [kasirLoaded, setKasirLoaded] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(readActiveId);
-  const isOwner = useSyncExternalStore(subscribeAdminLock, isAdminUnlocked, () => false);
+  const [kasirKnownEarlier] = useState<boolean>(() => !!readStored(CACHE_KEY));
+  const unlocked = useSyncExternalStore(subscribeAdminLock, isAdminUnlocked, () => false);
 
   const load = useCallback(async () => {
     if (!accessToken || !spreadsheetId) return;
@@ -116,6 +126,16 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [activeId, activeKasir, kasirLoaded]);
+
+  // A shop with no owner password and no active cashier has nobody to lock out,
+  // so the owner is simply the owner — asking a first-time user for an "admin
+  // password" they never created was the most confusing moment of the app.
+  // Guarded by accessReady: while nothing has loaded (or a load failed with no
+  // cache) the empty defaults must NOT read as "an unprotected shop".
+  const hasOwnerPassword = !!settings.adminPasswordHash;
+  const accessReady = !settingsLoading && settingsKnown && (kasirLoaded || kasirKnownEarlier);
+  const ownerByDefault = accessReady && !hasOwnerPassword && !kasirList.some((k) => k.aktif);
+  const isOwner = unlocked || ownerByDefault;
 
   const needsPin = kasirList.some((k) => k.aktif) && !activeKasir && !isOwner;
 
@@ -177,7 +197,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
 
   return (
     <AccessContext.Provider
-      value={{ kasirList, kasirLoaded, activeKasir, isOwner, needsPin, actorName, can, loginKasir, logoutKasir, refreshKasir: load, saveKasirProfil }}
+      value={{ kasirList, kasirLoaded, activeKasir, isOwner, hasOwnerPassword, accessReady, needsPin, actorName, can, loginKasir, logoutKasir, refreshKasir: load, saveKasirProfil }}
     >
       {children}
     </AccessContext.Provider>

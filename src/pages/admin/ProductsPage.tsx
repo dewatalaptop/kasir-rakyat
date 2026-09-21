@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { PageTip } from "../../components/help/PageTip";
 import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
 import { getKategori, getProduk } from "../../lib/sheetsStore";
@@ -39,6 +40,9 @@ export function ProductsPage() {
           Tambah
         </Button>
       </div>
+      <PageTip id="produk-nonaktif" title="Nonaktifkan, jangan hapus">
+        Produk yang sedang tidak dijual cukup dinonaktifkan — hilang dari layar Kasir tapi riwayat dan laporan lama tetap benar. Bisa diaktifkan lagi kapan saja.
+      </PageTip>
       {Number.isFinite(maxProduk) && (
         <p className="text-xs text-[var(--text-faint)]">
           {activeCount}/{maxProduk} produk aktif (versi gratis){atLimit && " — batas tercapai"}

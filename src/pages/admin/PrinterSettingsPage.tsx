@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { PageTip } from "../../components/help/PageTip";
+import { markStep } from "../../lib/guide";
 import { useSettings } from "../../context/SettingsContext";
 import { usePrinter, type PrinterStatus } from "../../context/PrinterContext";
 import { Button } from "../../components/ui/Button";
@@ -57,6 +59,7 @@ export function PrinterSettingsPage() {
     setBusy(true);
     try {
       await updateSettings({ printer_pref: pref });
+      markStep("printer");
     } finally {
       setBusy(false);
     }
@@ -66,6 +69,7 @@ export function PrinterSettingsPage() {
     try {
       await printer.printTestPage(settings.businessName);
       show("Halaman tes dikirim ke printer.", "success");
+      markStep("printer");
     } catch (err) {
       show(err instanceof Error ? err.message : "Gagal mencetak.", "error");
     }
@@ -81,6 +85,9 @@ export function PrinterSettingsPage() {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <h1 className="font-display text-xl font-extrabold text-[var(--text)]">Pengaturan Printer</h1>
+      <PageTip id="printer-cara" title="Belum punya printer? Tidak masalah">
+        Struk tetap bisa dibagikan atau dicetak lewat browser. Printer thermal Bluetooth LE bisa tersambung langsung di aplikasi Android; printer lain lewat aplikasi RawBT. Setelah memilih, tekan “Cetak Halaman Tes”.
+      </PageTip>
 
       <div className="flex flex-col gap-2" role="radiogroup" aria-label="Cara mencetak struk">
         {PREFS.map((p) => {

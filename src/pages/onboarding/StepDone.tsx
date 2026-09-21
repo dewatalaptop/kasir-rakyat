@@ -75,7 +75,7 @@ export function StepDone({ businessType }: { businessType: BusinessTypeKey }) {
       <h2 className="font-display text-xl font-bold text-[var(--text)]">Semua siap!</h2>
       <p className="text-sm text-[var(--text-secondary)]">
         Mau kami isikan beberapa produk contoh supaya katalog tidak kosong? Kamu bisa hapus/ubah kapan saja di menu
-        Produk.
+        Produk. Setelah ini kamu akan ditawari tur singkat (bisa dilewati).
       </p>
       <Button onClick={() => finish(true)} disabled={busy} fullWidth>
         {busy ? "Menyiapkan..." : "Ya, isi contoh produk"}

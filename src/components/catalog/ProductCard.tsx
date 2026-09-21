@@ -4,12 +4,13 @@ import { LOW_STOCK_THRESHOLD } from "../../lib/stats";
 import { PlusIcon } from "../ui/icons";
 import { ProductThumb } from "./ProductThumb";
 
-export function ProductCard({ produk, qtyInCart = 0, onAdd }: { produk: Produk; qtyInCart?: number; onAdd: (p: Produk) => void }) {
+export function ProductCard({ produk, qtyInCart = 0, onAdd, tourAnchor = false }: { produk: Produk; qtyInCart?: number; onAdd: (p: Produk) => void; tourAnchor?: boolean }) {
   const lowStock = produk.stokTampilan !== null && produk.stokTampilan <= LOW_STOCK_THRESHOLD;
   const soldOut = produk.stokTampilan !== null && produk.stokTampilan <= 0;
   return (
     <button
       type="button"
+      data-tour={tourAnchor ? "product" : undefined}
       onClick={() => onAdd(produk)}
       className={`shape-card card-shadow group relative flex flex-col overflow-hidden border bg-[var(--surface)] text-left transition active:scale-[0.98] ${
         qtyInCart > 0 ? "border-[var(--brand-400)] ring-1 ring-[var(--brand-300)]" : "border-[var(--border)] hover:border-[var(--brand-300)]"

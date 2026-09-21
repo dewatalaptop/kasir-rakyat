@@ -235,6 +235,28 @@ describe("paid plan: upgrade by manual transfer with a unique code", () => {
     expect(screen.queryByRole("button", { name: /Upgrade/ })).toBeNull();
   });
 
+  it("shows every bank account the provider configured, each with its own copy button", async () => {
+    m = await mountApp({ biz: "warung" });
+    m.server.bank = {
+      bankName: "BNI",
+      accountNumber: "1234567890",
+      accountName: "CV Nuvora",
+      accounts: [
+        { bankName: "BNI", accountNumber: "1234567890", accountName: "CV Nuvora" },
+        { bankName: "DANA", accountNumber: "081200001111", accountName: "Nuvora" },
+      ],
+      whatsapp: "",
+      note: "",
+    };
+    await unlockOwner(m, "/admin/akun");
+    await m.user.click(await screen.findByRole("button", { name: /Upgrade/ }));
+    await screen.findByText("Ke salah satu rekening ini");
+    expect(screen.getByText("1234567890")).toBeTruthy();
+    expect(screen.getByText("081200001111")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Salin no\. BNI/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Salin no\. DANA/ })).toBeTruthy();
+  });
+
   it("shows a retry when the payment server can't be reached", async () => {
     m = await mountApp({ biz: "warung" });
     m.server.offline = true;

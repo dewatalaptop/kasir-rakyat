@@ -19,6 +19,7 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Sheet } from "../../components/ui/Sheet";
+import { OwnerPasswordForm } from "../../components/auth/OwnerPasswordForm";
 import { useToast } from "../../components/ui/Toast";
 import { PlusIcon, EditIcon, UsersIcon } from "../../components/ui/icons";
 
@@ -32,10 +33,11 @@ function roleLabelFor(k: Pick<KasirProfil, "role" | "izin">): string {
 }
 
 export function KasirPage() {
-  const { kasirList, kasirLoaded, saveKasirProfil } = useAccess();
+  const { kasirList, kasirLoaded, saveKasirProfil, hasOwnerPassword } = useAccess();
   const { plan } = useSettings();
   const { show } = useToast();
   const [editing, setEditing] = useState<KasirProfil | "baru" | null>(null);
+  const [needPassword, setNeedPassword] = useState(false);
 
   const max = limitsFor(plan).maxKasir;
   const activeCount = kasirList.filter((k) => k.aktif).length;
@@ -44,6 +46,12 @@ export function KasirPage() {
   function handleAdd() {
     if (atLimit) {
       show(`Batas ${max} kasir aktif untuk versi gratis. Nonaktifkan salah satu atau upgrade ke versi berbayar.`, "error");
+      return;
+    }
+    // The owner password is what keeps a cashier out of Pengaturan/Kasir/Akun. Without
+    // one, registering the first cashier would leave those menus open to them.
+    if (!hasOwnerPassword) {
+      setNeedPassword(true);
       return;
     }
     setEditing("baru");
@@ -83,7 +91,7 @@ export function KasirPage() {
       <Card className="text-xs leading-relaxed text-[var(--text-secondary)]">
         <p className="mb-1 font-bold text-[var(--text)]">Cara kerjanya</p>
         Setelah ada kasir terdaftar, layar Kasir meminta <b>pilih nama + PIN</b> sebelum berjualan, dan setiap transaksi tercatat atas nama kasir itu. Kasir hanya melihat menu
-        yang diizinkan. Pengaturan, Kasir & Izin, dan Langganan <b>selalu khusus pemilik</b> (password admin). PIN adalah pembatas untuk register bersama, bukan keamanan
+        yang diizinkan. Pengaturan, Kasir & Izin, dan Langganan <b>selalu khusus pemilik</b> (password pemilik). PIN adalah pembatas untuk register bersama, bukan keamanan
         tingkat bank — data tetap tersimpan di Google Sheets milikmu.
       </Card>
 
@@ -93,7 +101,7 @@ export function KasirPage() {
         <EmptyState
           icon={<UsersIcon size={32} />}
           title="Belum ada kasir terdaftar"
-          description="Selama belum ada, siapa pun yang memegang perangkat ini bisa berjualan tanpa PIN."
+          description="Selama belum ada, siapa pun yang memegang perangkat ini bisa berjualan tanpa PIN. Kalau kamu berjualan sendiri, tidak perlu mendaftarkan kasir."
           action={<Button onClick={handleAdd}>Tambah Kasir Pertama</Button>}
         />
       ) : (
@@ -135,6 +143,20 @@ export function KasirPage() {
           ))}
         </div>
       )}
+
+      <Sheet open={needPassword} onClose={() => setNeedPassword(false)} title="Buat password pemilik dulu">
+        <p className="mb-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+          Sebelum mendaftarkan kasir, kunci menu pemilik dengan password — supaya kasir hanya bisa berjualan dan tidak ikut membuka Pengaturan, Kasir & Izin, atau Langganan.
+          Password ini hanya kamu yang tahu; kasir memakai PIN mereka sendiri.
+        </p>
+        <OwnerPasswordForm
+          submitLabel="Simpan & Lanjut Tambah Kasir"
+          onDone={() => {
+            setNeedPassword(false);
+            setEditing("baru");
+          }}
+        />
+      </Sheet>
 
       <KasirFormSheet
         editing={editing}

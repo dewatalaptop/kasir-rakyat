@@ -14,6 +14,7 @@ export function CartSummaryBar() {
   return (
     <button
       type="button"
+      data-tour="cart"
       onClick={() => navigate("/kasir/keranjang")}
       className="fixed inset-x-4 bottom-[4.75rem] z-30 flex min-h-[52px] items-center justify-between rounded-2xl bg-[var(--brand-500)] px-4 py-3 text-white shadow-lg active:bg-[var(--brand-600)] lg:bottom-6 lg:left-auto lg:right-6 lg:w-96 xl:hidden"
     >

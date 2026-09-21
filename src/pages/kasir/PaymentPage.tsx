@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { markStep } from "../../lib/guide";
 import { useNavigate } from "react-router-dom";
 import { PaymentMethodPicker } from "../../components/checkout/PaymentMethodPicker";
 import { CashReceivedInput } from "../../components/checkout/CashReceivedInput";
@@ -52,6 +53,7 @@ export function PaymentPage() {
         show("Transaksi berhasil disimpan.", "success");
       }
       dispatch({ type: "clear" });
+      markStep("jual");
       navigate(`/kasir/struk/${transaksi.id}`, { state: { transaksi, fresh: true } });
     } finally {
       setBusy(false);

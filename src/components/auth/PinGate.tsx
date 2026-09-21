@@ -25,7 +25,7 @@ export function PinGate() {
           <BrandMark size={48} />
           <h1 className="mt-3 font-display text-lg font-extrabold text-[var(--text)]">{settings.businessName || "Kasir Rakyat"}</h1>
           <p className="text-xs text-[var(--text-secondary)]">
-            {ownerMode ? "Masukkan password admin" : picked ? `Halo, ${picked.nama} — masukkan PIN` : "Siapa yang bertugas?"}
+            {ownerMode ? "Masukkan password pemilik" : picked ? `Halo, ${picked.nama} — masukkan PIN` : "Siapa yang bertugas?"}
           </p>
         </div>
 

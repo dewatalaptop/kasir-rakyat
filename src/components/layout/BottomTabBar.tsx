@@ -19,12 +19,13 @@ export function BottomTabBar() {
   const count = cartItemCount(state.lines);
 
   return (
-    <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 flex border-t border-[var(--border)] bg-[var(--surface)] shadow-[0_-4px_16px_rgba(16,40,28,0.06)] lg:hidden">
+    <nav data-tour="nav" className="pb-safe fixed inset-x-0 bottom-0 z-40 flex border-t border-[var(--border)] bg-[var(--surface)] shadow-[0_-4px_16px_rgba(16,40,28,0.06)] lg:hidden">
       {TABS.map((tab) => (
         <NavLink
           key={tab.to}
           to={tab.to}
           end={tab.end}
+          data-tour={tab.to === "/kasir/keranjang" ? "cart" : undefined}
           className={({ isActive }) =>
             `relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-semibold transition ${
               isActive ? "text-[var(--brand-600)]" : "text-[var(--text-faint)]"

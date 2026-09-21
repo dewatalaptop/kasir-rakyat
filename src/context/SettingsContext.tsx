@@ -47,6 +47,11 @@ interface SettingsContextValue {
   accessToken: string | null;
   spreadsheetId: string | null;
   settings: Pengaturan;
+  // The settings are REAL (read from the sheet, or restored from an earlier real
+  // read) — not the empty defaults shown while nothing has loaded. Anything that
+  // reasons about "no admin password set" must wait for this, or a failed load
+  // would look like a fresh, unprotected shop.
+  settingsKnown: boolean;
   // True only when a token AND spreadsheet exist AND the token is believed
   // valid. A stale token is "not connected", so nothing treats it as usable.
   connected: boolean;
@@ -103,6 +108,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(getStoredAccessToken());
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(readStored(SPREADSHEET_ID_KEY));
   const [settings, setSettingsState] = useState<Pengaturan>(readSettingsCache);
+  const [settingsKnown, setSettingsKnown] = useState<boolean>(() => !!readStored(SETTINGS_CACHE_KEY));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [issue, setIssue] = useState<ConnectionIssue>(null);
@@ -117,6 +123,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       writeStored(SETTINGS_CACHE_KEY, JSON.stringify(next));
       return next;
     });
+    setSettingsKnown(true);
   }, []);
 
   // Translate a failed load into UI state. Auth/sheet problems become an
@@ -140,6 +147,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setAccessToken(null);
         setSpreadsheetId(null);
         setSettingsState(DEFAULT_SETTINGS);
+        setSettingsKnown(false);
         setIssue(null);
         setError(null);
         setLoading(false);
@@ -150,6 +158,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         // Different Google account than the one this device's cache belongs to.
         clearLocalSession();
         setSettingsState(DEFAULT_SETTINGS);
+        setSettingsKnown(false);
       }
       writeStored(OWNER_UID_KEY, uid);
 
@@ -345,6 +354,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         accessToken,
         spreadsheetId,
         settings,
+        settingsKnown,
         connected: usable,
         loading,
         error,

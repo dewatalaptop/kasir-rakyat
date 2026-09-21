@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { markStep } from "../../lib/guide";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
@@ -60,6 +61,7 @@ export function ProductEditPage() {
       // at the new state, so a failed save never loses the old photo.
       if (oldRef && oldRef !== foto) await deletePhoto(oldRef, accessToken).catch(() => {});
       show("Produk disimpan.", "success");
+      markStep("produk");
       navigate("/admin/produk");
     } catch (err) {
       // Do not leave the just-written new photo orphaned if saving failed.

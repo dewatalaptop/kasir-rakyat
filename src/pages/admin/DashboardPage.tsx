@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { QuickStartCard } from "../../components/help/QuickStartCard";
 import { useSettings } from "../../context/SettingsContext";
 import { useSheetsData } from "../../hooks/useSheetsData";
 import { getProduk, getTransaksi } from "../../lib/sheetsStore";
@@ -43,6 +44,7 @@ export function DashboardPage() {
         <h1 className="font-display text-xl font-extrabold text-[var(--text)]">Halo, {settings.businessName || "Kasir Rakyat"}</h1>
         <p className="text-sm text-[var(--text-secondary)]">Ringkasan hari ini</p>
       </div>
+      <QuickStartCard />
       {loading ? (
         <div className="flex justify-center py-10 text-[var(--brand-500)]">
           <Spinner />

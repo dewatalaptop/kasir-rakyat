@@ -7,6 +7,7 @@ import { BrandMark, LockIcon, LogoutIcon, UsersIcon } from "../../components/ui/
 import { ADMIN_NAV, CASHIER_NAV, EXTRA_NAV, visibleNav, type NavItem } from "../../components/layout/navItems";
 import { useAccess } from "../../context/AccessContext";
 import { signOutUser } from "../../lib/auth";
+import { QuickStartCard } from "../../components/help/QuickStartCard";
 
 const TILE_TONES = [
   "bg-[var(--kpi-green-bg)] text-[var(--kpi-green-fg)]",
@@ -42,6 +43,8 @@ export function MorePage() {
             {plan === "berbayar" ? "BERBAYAR" : "GRATIS"}
           </span>
         </div>
+
+        <QuickStartCard />
 
         <div className="grid grid-cols-3 gap-3">
           {[...visibleNav(TILES, can), ...ownerTile].map((item, i) => (

@@ -52,7 +52,7 @@ export function SideNav() {
           <p className="truncate text-[11px] text-[var(--sidebar-text-dim)]">{settings.businessName || "Mudah • Lengkap • Fleksibel"}</p>
         </div>
       </div>
-      <nav className="scrollbar-hide flex-1 overflow-y-auto">
+      <nav data-tour="nav" className="scrollbar-hide flex-1 overflow-y-auto">
         <NavGroup title="Kasir" items={visibleNav(CASHIER_NAV, can)} />
         <NavGroup title="Kelola" items={visibleNav(ADMIN_NAV, can)} />
         <NavGroup title="Lainnya" items={[...visibleNav(EXTRA_NAV, can), ...ownerEntry]} />

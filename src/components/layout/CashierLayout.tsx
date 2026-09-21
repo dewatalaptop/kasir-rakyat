@@ -3,6 +3,7 @@ import { BottomTabBar } from "./BottomTabBar";
 import { SideNav } from "./SideNav";
 import { PinGate } from "../auth/PinGate";
 import { useAccess } from "../../context/AccessContext";
+import { TourHost } from "../help/Tour";
 
 // lg+: dark-green sidebar on the left, page content on the right.
 // below lg: full-width content + bottom tab bar.
@@ -16,6 +17,7 @@ export function CashierLayout() {
         <Outlet />
       </div>
       <BottomTabBar />
+      <TourHost />
     </div>
   );
 }

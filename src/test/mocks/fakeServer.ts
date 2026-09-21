@@ -6,6 +6,8 @@ export interface Bank {
   bankName: string;
   accountNumber: string;
   accountName: string;
+  // present on servers that support several accounts; the fields above mirror accounts[0]
+  accounts?: { bankName: string; accountNumber: string; accountName: string }[];
   whatsapp: string;
   note: string;
 }
