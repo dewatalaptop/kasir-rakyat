@@ -19,6 +19,11 @@ adb logcat -c
 echo "== install"; adb install -r app-debug.apk 2>&1 | tee "$OUT/install.txt"
 adb shell dumpsys package "$PKG" | grep -E "versionName|versionCode" | head -3 | tee "$OUT/version.txt"
 
+# Grant the runtime permissions the BLE plugin asks for, so its native call answers
+# with the real device state (no Bluetooth hardware on the emulator) instead of
+# blocking on a system permission dialog.
+for perm in BLUETOOTH_CONNECT BLUETOOTH_SCAN ACCESS_FINE_LOCATION; do adb shell pm grant "$PKG" "android.permission.$perm" 2>/dev/null; done
+
 echo "== launch"; adb shell am start -n "$PKG/.MainActivity" 2>&1 | tee "$OUT/launch.txt"
 sleep 30
 shot 01-launch

@@ -31,7 +31,8 @@ const probe = `(async () => {
   // Real native calls: the BLE plugin must answer (on an emulator with no Bluetooth
   // hardware the point is that it fails with a readable message instead of crashing),
   // and the Camera plugin must report its permission state.
-  try { await C.nativePromise("BluetoothLe", "initialize", {}); out.bleInitialize = "ok"; }
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout after " + ms + "ms (a system permission dialog may be waiting)")), ms))]);
+  try { await withTimeout(C.nativePromise("BluetoothLe", "initialize", {}), 10000); out.bleInitialize = "ok"; }
   catch (e) { out.bleInitialize = "error: " + String((e && e.message) || e); }
   try { out.cameraPermissions = await C.nativePromise("Camera", "checkPermissions", {}); }
   catch (e) { out.cameraPermissions = "error: " + String((e && e.message) || e); }
