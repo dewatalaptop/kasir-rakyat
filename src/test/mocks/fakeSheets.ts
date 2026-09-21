@@ -61,6 +61,8 @@ export interface FakeSheets {
   forbiddenIds: Set<string>;
   // set to make the next Sheets call fail with this raw 403 body instead
   forbidBody: string | null;
+  // this bearer token is answered 401 by every Google API (an expired access token)
+  staleToken: string | null;
   appended: string[]; // "Tab" per successful append, in order
   install(): void;
   uninstall(): void;
@@ -98,6 +100,7 @@ export async function createFakeSheets(biz: Biz): Promise<FakeSheets> {
     failAppendTo: null,
     forbiddenIds: new Set<string>(),
     forbidBody: null,
+    staleToken: null,
     appended: [],
     install() {
       globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -106,6 +109,10 @@ export async function createFakeSheets(biz: Biz): Promise<FakeSheets> {
         const method = (init?.method ?? "GET").toUpperCase();
         if (/googleapis\.com/.test(url) && state.offline) throw new TypeError("Failed to fetch");
 
+        const bearer = (init?.headers as Record<string, string> | undefined)?.Authorization;
+        if (state.staleToken && /googleapis.com/.test(url) && bearer === `Bearer ${state.staleToken}`) {
+          return json({ error: { code: 401, message: "Invalid Credentials", status: "UNAUTHENTICATED" } }, 401);
+        }
         const sid = url.match(/sheets\.googleapis\.com\/v4\/spreadsheets\/([^/:?]+)/)?.[1];
         if (state.forbidBody && /googleapis\.com/.test(url)) return new Response(state.forbidBody, { status: 403, headers: { "Content-Type": "application/json" } });
         if (sid && state.forbiddenIds.has(sid)) return json({ error: { code: 403, message: "The caller does not have permission", status: "PERMISSION_DENIED" } }, 403);

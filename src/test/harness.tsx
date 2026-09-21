@@ -32,6 +32,8 @@ export async function mountApp(opts: {
   // Leave the first-run tour/welcome enabled (off by default so unrelated tests
   // are not interrupted by the welcome dialog).
   tour?: boolean;
+  // Boot with a Google token whose lifetime already ran out (a user returning after > 1 hour).
+  tokenExpired?: boolean;
   // Do not wait for the business name to appear (screens that replace the app).
   skipReady?: boolean;
 }): Promise<Mounted> {
@@ -52,6 +54,7 @@ export async function mountApp(opts: {
   for (const [k, v] of Object.entries(opts.local ?? {})) localStorage.setItem(k, v);
 
   storeAccessToken("mock-token");
+  if (opts.tokenExpired) localStorage.setItem("sheetsAccessTokenExpiresAt", String(Date.now() - 1000));
   localStorage.setItem("kasirRakyat.spreadsheetId", "mock-sheet");
   window.history.pushState({}, "", opts.path ?? "/kasir");
   window.confirm = vi.fn(() => true);
