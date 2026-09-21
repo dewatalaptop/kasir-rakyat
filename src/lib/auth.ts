@@ -3,7 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { firebaseAuth } from "../firebase";
 import { nativeGoogleSignIn, nativeGoogleSignOut } from "./nativeGoogle";
 import { SHEETS_SCOPE, clearStoredAccessToken, signInWithSheetsAccess, storeAccessToken } from "./sheets";
-import { clearLocalSession } from "./session";
+import { clearLocalSession, stashPendingFor } from "./session";
 
 // Web: signInWithPopup only — never signInWithRedirect (see firebase.ts's own
 // comment: this app's authDomain is the shared project's domain, not its own
@@ -27,6 +27,7 @@ export async function signIn(): Promise<User> {
 export async function signOutUser(): Promise<void> {
   // Forget this account's spreadsheet + token BEFORE the auth change, so the
   // next person to sign in on this device can never inherit them.
+  stashPendingFor(firebaseAuth.currentUser?.uid);
   clearStoredAccessToken();
   clearLocalSession();
   await firebaseSignOut(firebaseAuth);

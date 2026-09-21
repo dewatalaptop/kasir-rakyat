@@ -32,6 +32,8 @@ export async function mountApp(opts: {
   // Leave the first-run tour/welcome enabled (off by default so unrelated tests
   // are not interrupted by the welcome dialog).
   tour?: boolean;
+  // Do not wait for the business name to appear (screens that replace the app).
+  skipReady?: boolean;
 }): Promise<Mounted> {
   cleanup();
   localStorage.clear();
@@ -56,7 +58,7 @@ export async function mountApp(opts: {
 
   const user = userEvent.setup({ delay: null });
   render(<App />);
-  await screen.findAllByText(NAMES[opts.biz], {}, { timeout: 15000 });
+  if (!opts.skipReady) await screen.findAllByText(NAMES[opts.biz], {}, { timeout: 15000 });
   return { sheets, server, user, biz: opts.biz };
 }
 

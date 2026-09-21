@@ -14,7 +14,8 @@ import { checkLicense, type LicenseResult, type PlanStatus } from "../lib/licens
 import { flushPendingQueue } from "../lib/checkout";
 import { pendingCount } from "../lib/pendingQueue";
 import { describeError } from "../lib/errors";
-import { OWNER_UID_KEY, SETTINGS_CACHE_KEY, SPREADSHEET_ID_KEY, clearLocalSession, readStored, writeStored } from "../lib/session";
+import { OWNER_UID_KEY, SETTINGS_CACHE_KEY, SPREADSHEET_ID_KEY, clearLocalSession, readStored, restorePendingFor, stashPendingFor, writeStored } from "../lib/session";
+import { firebaseAuth } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "../components/ui/Toast";
 import type { Pengaturan } from "../types";
@@ -156,11 +157,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const owner = readStored(OWNER_UID_KEY);
       if (owner && owner !== uid) {
         // Different Google account than the one this device's cache belongs to.
+        stashPendingFor(owner);
         clearLocalSession();
         setSettingsState(DEFAULT_SETTINGS);
         setSettingsKnown(false);
       }
       writeStored(OWNER_UID_KEY, uid);
+      restorePendingFor(uid);
 
       const token = getStoredAccessToken();
       const sheetId = readStored(SPREADSHEET_ID_KEY);
@@ -302,7 +305,24 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // inside the click handler or browsers block it.
     const token = await connectGoogleSheets();
     setAccessToken(token);
-    let sheetId = spreadsheetId;
+    // The popup lets the person pick ANY Google account. If it was not the one
+    // this device's data belongs to, everything cached (spreadsheet, settings,
+    // cashier list, queued sales) is the OTHER account's: set it aside and start
+    // clean, instead of asking Google for a file this account was never given
+    // (that comes back as a 403).
+    const nowUid = firebaseAuth.currentUser?.uid ?? null;
+    const owner = readStored(OWNER_UID_KEY);
+    if (nowUid && owner && owner !== nowUid) {
+      stashPendingFor(owner);
+      clearLocalSession();
+      writeStored(OWNER_UID_KEY, nowUid);
+      restorePendingFor(nowUid);
+      setSettingsState(DEFAULT_SETTINGS);
+      setSettingsKnown(false);
+      setSpreadsheetId(null);
+    }
+    // Read fresh: the id captured when this callback was created may already be stale.
+    let sheetId: string | null = readStored(SPREADSHEET_ID_KEY);
     try {
       if (!sheetId) throw new SheetsNotFoundError();
       await loadSettings(token, sheetId);
@@ -319,7 +339,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const flushed = await flushPendingQueue(token, sheetId);
       if (flushed > 0) show(`${flushed} transaksi tertunda berhasil disinkron.`, "success");
     }
-  }, [spreadsheetId, loadSettings, persistSpreadsheet, show]);
+  }, [loadSettings, persistSpreadsheet, show]);
 
   const retryLoad = useCallback(async () => {
     if (!accessToken || !spreadsheetId) return;

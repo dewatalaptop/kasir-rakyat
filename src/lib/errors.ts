@@ -2,6 +2,7 @@ import {
   SheetsAuthExpiredError,
   SheetsNetworkError,
   SheetsNotFoundError,
+  SheetsScopeError,
   SheetsQuotaExceededError,
   SheetsRateLimitError,
 } from "./sheets";
@@ -30,6 +31,7 @@ export function describeError(err: unknown): FriendlyError {
   const code = typeof err === "object" && err !== null && "code" in err ? String((err as { code: unknown }).code) : "";
   if (AUTH_CODE_MESSAGES[code]) return { message: AUTH_CODE_MESSAGES[code], action: "retry" };
   if (err instanceof SheetsAuthExpiredError) return { message: err.message, action: "reauth" };
+  if (err instanceof SheetsScopeError) return { message: err.message, action: "reauth" };
   if (err instanceof SheetsNotFoundError) return { message: err.message, action: "reconnect-sheet" };
   if (err instanceof SheetsRateLimitError) return { message: err.message, action: "retry" };
   if (err instanceof SheetsNetworkError) return { message: err.message, action: "retry" };

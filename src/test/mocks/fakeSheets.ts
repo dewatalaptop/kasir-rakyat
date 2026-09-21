@@ -57,6 +57,10 @@ export interface FakeSheets {
   // simulate no connectivity (fetch rejects) / a failing append to one tab
   offline: boolean;
   failAppendTo: string | null;
+  // spreadsheet ids Google refuses for this account (a file another account made): 403 PERMISSION_DENIED
+  forbiddenIds: Set<string>;
+  // set to make the next Sheets call fail with this raw 403 body instead
+  forbidBody: string | null;
   appended: string[]; // "Tab" per successful append, in order
   install(): void;
   uninstall(): void;
@@ -92,6 +96,8 @@ export async function createFakeSheets(biz: Biz): Promise<FakeSheets> {
     tables,
     offline: false,
     failAppendTo: null,
+    forbiddenIds: new Set<string>(),
+    forbidBody: null,
     appended: [],
     install() {
       globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -100,6 +106,9 @@ export async function createFakeSheets(biz: Biz): Promise<FakeSheets> {
         const method = (init?.method ?? "GET").toUpperCase();
         if (/googleapis\.com/.test(url) && state.offline) throw new TypeError("Failed to fetch");
 
+        const sid = url.match(/sheets\.googleapis\.com\/v4\/spreadsheets\/([^/:?]+)/)?.[1];
+        if (state.forbidBody && /googleapis\.com/.test(url)) return new Response(state.forbidBody, { status: 403, headers: { "Content-Type": "application/json" } });
+        if (sid && state.forbiddenIds.has(sid)) return json({ error: { code: 403, message: "The caller does not have permission", status: "PERMISSION_DENIED" } }, 403);
         if (/sheets\.googleapis\.com\/v4\/spreadsheets\/[^/]+:batchUpdate/.test(url)) {
           for (const r of JSON.parse(String(init?.body)).requests ?? []) if (r.addSheet) tables[r.addSheet.properties.title] ??= [];
           return json({});
@@ -128,7 +137,7 @@ export async function createFakeSheets(biz: Biz): Promise<FakeSheets> {
           }
           return json({ values: rows });
         }
-        if (/googleapis\.com\/drive/.test(url)) return json({ files: [] });
+        if (/googleapis\.com\/drive/.test(url)) return method === "POST" ? json({ id: "mock-sheet-2" }) : json({ files: [] });
         return real(input, init);
       }) as typeof fetch;
     },

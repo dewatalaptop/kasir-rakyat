@@ -15,6 +15,10 @@ export const SHEETS_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const sheetsProvider = new GoogleAuthProvider();
 sheetsProvider.addScope(SHEETS_SCOPE);
 
+function consentParams(): Record<string, string> {
+  return forceConsentNext ? { prompt: "consent" } : {};
+}
+
 const TOKEN_STORAGE_KEY = "sheetsAccessToken";
 const TOKEN_EXPIRES_KEY = "sheetsAccessTokenExpiresAt";
 
@@ -108,11 +112,13 @@ export async function connectGoogleSheets(): Promise<string> {
     storeAccessToken(accessToken);
     return accessToken;
   }
+  sheetsProvider.setCustomParameters(consentParams());
   const result = await signInWithPopup(firebaseAuth, sheetsProvider);
   const credential = GoogleAuthProvider.credentialFromResult(result);
   if (!credential?.accessToken) {
     throw new Error("Gagal mendapatkan akses Google Sheets — coba lagi.");
   }
+  forceConsentNext = false;
   storeAccessToken(credential.accessToken);
   return credential.accessToken;
 }
@@ -181,8 +187,49 @@ export class SheetsNetworkError extends Error {
 // of surfacing a bare "404" to a non-technical user.
 export class SheetsNotFoundError extends Error {
   constructor() {
-    super("Spreadsheet tidak ditemukan — mungkin sudah dihapus di Google Drive. Menyambung ulang akan membuat yang baru.");
+    super("Spreadsheet tidak ditemukan atau bukan milik akun Google ini — mungkin dihapus di Google Drive, atau kamu memilih akun yang berbeda. Menyambung ulang akan mencari atau membuat yang baru.");
     this.name = "SheetsNotFoundError";
+  }
+}
+
+// The Google account did not grant this app the Drive-file permission (the
+// consent screen lets people untick it), so the token is valid but useless.
+export class SheetsScopeError extends Error {
+  constructor() {
+    super("Izin akses Google Drive belum diberikan. Ketuk Sambungkan Ulang, lalu pada layar izin Google pastikan izin untuk membuat/mengelola file Drive aplikasi ini tercentang.");
+    this.name = "SheetsScopeError";
+  }
+}
+
+// Set once a scope problem was seen, so the NEXT Google popup asks for consent
+// again (without it Google silently reuses the earlier, too-narrow grant).
+let forceConsentNext = false;
+
+// What a 403 from Google actually means. Google uses 403 for five unrelated
+// things and the raw JSON is useless to a shop owner, so tell them apart:
+//  - the file belongs to (or was never shared with) ANOTHER account: for a
+//    spreadsheet under drive.file this is "The caller does not have permission"
+//    — the same situation as a deleted file, so it is handled as one;
+//  - the permission was not granted / rate limited / a disabled API / anything else.
+export type Forbidden = "quota" | "scope" | "rate" | "api-disabled" | "other-account-file" | "other";
+export function classifyForbidden(body: string, url: string): Forbidden {
+  if (body.includes("storageQuotaExceeded")) return "quota";
+  if (/ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficient authentication scopes|insufficientScopes/i.test(body)) return "scope";
+  if (/rateLimitExceeded|userRateLimitExceeded|RATE_LIMIT_EXCEEDED/i.test(body)) return "rate";
+  if (/SERVICE_DISABLED|accessNotConfigured|has not been used in project/i.test(body)) return "api-disabled";
+  // A call on ONE specific spreadsheet/file id that Google refuses for this account.
+  const onSpecificFile = /sheets\.googleapis\.com\/v4\/spreadsheets\/[^/:?]+/.test(url) || /googleapis\.com\/drive\/v3\/files\/[^/?]+/.test(url);
+  if (onSpecificFile && /PERMISSION_DENIED|does not have permission|appNotAuthorizedToFile|insufficientFilePermissions|forbidden/i.test(body)) return "other-account-file";
+  return "other";
+}
+
+// One short human line out of Google's JSON error body (never the whole blob).
+export function googleReason(body: string): string {
+  try {
+    const e = JSON.parse(body)?.error;
+    return [e?.status, e?.message].filter(Boolean).join(" — ").slice(0, 160) || body.slice(0, 160);
+  } catch {
+    return body.slice(0, 160);
   }
 }
 
@@ -207,8 +254,26 @@ async function sheetsFetch(url: string, accessToken: string, init?: RequestInit)
   if (res.status === 429) throw new SheetsRateLimitError();
   if (!res.ok) {
     const text = await res.text();
-    if (res.status === 403 && text.includes("storageQuotaExceeded")) throw new SheetsQuotaExceededError();
-    throw new Error(`Google Sheets API error ${res.status}: ${text}`);
+    if (res.status === 403) {
+      switch (classifyForbidden(text, url)) {
+        case "quota":
+          throw new SheetsQuotaExceededError();
+        case "rate":
+          throw new SheetsRateLimitError();
+        case "scope":
+          forceConsentNext = true;
+          reportSheetsProblem("auth-expired", accessToken);
+          throw new SheetsScopeError();
+        case "other-account-file":
+          reportSheetsProblem("sheet-missing", accessToken);
+          throw new SheetsNotFoundError();
+        case "api-disabled":
+          throw new Error("Layanan Google Sheets/Drive belum aktif untuk aplikasi ini. Hubungi penyedia aplikasi.");
+        default:
+          throw new Error(`Google menolak akses (403). Coba ketuk Sambungkan Ulang; kalau tetap terjadi, hubungi penyedia aplikasi. Rincian: ${googleReason(text)}`);
+      }
+    }
+    throw new Error(`Google Sheets API error ${res.status}: ${googleReason(text)}`);
   }
   return res.json();
 }
