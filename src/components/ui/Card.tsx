@@ -53,7 +53,7 @@ export function StatCard({
       <div className="min-w-0">
         <p className="truncate text-[11px] font-medium text-[var(--text-secondary)] sm:text-xs">{label}</p>
         <p className={`font-tabular truncate font-extrabold leading-tight text-[var(--text)] ${compact ? "text-base" : "text-xl"}`}>{value}</p>
-        {delta && <p className={`truncate text-[10px] font-semibold sm:text-[11px] ${deltaClass}`}>{delta}</p>}
+        {delta && <p className={`text-[10px] font-semibold leading-tight sm:text-[11px] ${deltaClass}`}>{delta}</p>}
       </div>
     </div>
   );

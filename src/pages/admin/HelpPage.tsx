@@ -29,7 +29,7 @@ export function HelpPage() {
   return (
     <div className="min-h-screen bg-[var(--bg)] p-4">
       <div className="mx-auto flex max-w-2xl flex-col gap-4">
-        <button type="button" onClick={() => navigate(-1)} className="self-start text-sm font-medium text-[var(--text-secondary)]">
+        <button type="button" onClick={() => navigate(-1)} className="-ml-1 flex min-h-[44px] items-center self-start px-1 text-sm font-medium text-[var(--text-secondary)]">
           ← Kembali
         </button>
         <div>

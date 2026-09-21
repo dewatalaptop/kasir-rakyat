@@ -25,3 +25,9 @@ export function isAndroidApp(): boolean {
 export function isNativeApp(): boolean {
   return Capacitor.isNativePlatform() || (import.meta.env.DEV && isAndroidApp());
 }
+
+// RawBT is an Android app: on a PC, iPhone or iPad its button would do nothing.
+export function canUseRawBT(): boolean {
+  if (isAndroidApp()) return true;
+  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+}

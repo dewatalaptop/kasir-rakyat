@@ -124,7 +124,7 @@ export function PrinterSettingsPage() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-[var(--text)]">Printer Bluetooth</p>
-              <p className="truncate text-xs text-[var(--text-secondary)]">{printer.connectedName ?? "Belum ada printer terhubung"}</p>
+              <p className="text-xs text-[var(--text-secondary)]">{printer.connectedName ?? "Belum ada printer terhubung"}</p>
             </div>
             <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${statusTone}`}>{STATUS_LABEL[printer.status]}</span>
           </div>

@@ -8,6 +8,7 @@ import { PAPER_WIDTHS } from "../../lib/escpos";
 import { usePrinter } from "../../context/PrinterContext";
 import { useAccess } from "../../context/AccessContext";
 import { useToast } from "../ui/Toast";
+import { canUseRawBT } from "../../lib/platform";
 
 // Print buttons for a receipt. The method chosen in Pengaturan > Printer is the
 // filled (primary) button; the others stay available underneath so a dead
@@ -19,7 +20,10 @@ export function ReceiptActions({ t, p, watermark = false }: { t: Transaksi; p: P
   const printer = usePrinter();
   const { isOwner } = useAccess();
   const width = PAPER_WIDTHS[printer.paperWidth].chars;
-  const pref = p.printerPref;
+  const rawbtUsable = canUseRawBT();
+  // The chosen way is highlighted — unless it can't work on this device (RawBT on a PC,
+  // Bluetooth in a plain browser): then the browser print is the working default.
+  const pref = (p.printerPref === "rawbt" && !rawbtUsable) || (p.printerPref === "bluetooth" && !printer.isNative) ? "browser" : p.printerPref;
 
   function handleRawBT() {
     printViaRawBT(t, p, watermark, width);
@@ -79,9 +83,11 @@ export function ReceiptActions({ t, p, watermark = false }: { t: Transaksi; p: P
   return (
     <div className="flex flex-col gap-2">
       {bluetoothButton}
-      <Button onClick={handleRawBT} variant={pref === "rawbt" ? "primary" : "ghost"} icon={<PrinterIcon size={18} />} fullWidth>
-        Cetak via RawBT
-      </Button>
+      {rawbtUsable && (
+        <Button onClick={handleRawBT} variant={pref === "rawbt" ? "primary" : "ghost"} icon={<PrinterIcon size={18} />} fullWidth>
+          Cetak via RawBT
+        </Button>
+      )}
       <Button onClick={printViaBrowser} variant={pref === "browser" ? "primary" : "ghost"} fullWidth>
         Cetak dari Browser
       </Button>

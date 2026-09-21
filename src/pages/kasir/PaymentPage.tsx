@@ -23,7 +23,7 @@ export function PaymentPage() {
   const { actorName } = useAccess();
   const { show } = useToast();
   const navigate = useNavigate();
-  const [method, setMethod] = useState<PaymentMethod | null>(null);
+  const [method, setMethod] = useState<PaymentMethod | null>("tunai");
   const [uangDiterima, setUangDiterima] = useState(0);
   const [busy, setBusy] = useState(false);
 

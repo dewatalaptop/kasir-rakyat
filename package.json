@@ -8,7 +8,8 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sim": "vite --config vite.sim.config.ts"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",

@@ -42,14 +42,18 @@ export function BarChart({
   const padT = 12;
   const padB = 26;
   const max = niceMax(Math.max(0, ...data.map((d) => d.value)));
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => max * f);
+  const allZero = data.every((d) => d.value === 0);
+  // With no data (or tiny values) quarter steps round to the same label ("1 1 1 0 0"):
+  // show only distinct labels, and just the baseline when there is nothing to scale.
+  const ticks = allZero
+    ? [0]
+    : [0, 0.25, 0.5, 0.75, 1].map((f) => max * f).filter((t, i, all) => all.findIndex((u) => valueFormatter(u) === valueFormatter(t)) === i);
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
   const slot = data.length > 0 ? plotW / data.length : plotW;
   const barW = Math.min(34, slot * 0.62);
   // Show at most ~10 x labels so a 30-bar chart stays readable.
   const labelEvery = Math.max(1, Math.ceil(data.length / 10));
-  const allZero = data.every((d) => d.value === 0);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Grafik penjualan">

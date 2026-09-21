@@ -48,7 +48,7 @@ export function SheetsSettingsPage() {
             href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}
             target="_blank"
             rel="noreferrer"
-            className="mt-1 block text-xs text-[var(--brand-600)] underline"
+            className="mt-1 flex min-h-[44px] items-center text-xs text-[var(--brand-600)] underline"
           >
             Buka spreadsheet di Google Sheets
           </a>

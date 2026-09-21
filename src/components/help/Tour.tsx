@@ -228,7 +228,7 @@ function TourRun() {
             ref={nextRef}
             type="button"
             onClick={() => (last ? finish() : setIndex(index + 1))}
-            className="min-h-[44px] rounded-xl bg-[var(--brand-500)] px-5 text-sm font-bold text-white active:bg-[var(--brand-600)]"
+            className="min-h-[44px] rounded-xl bg-[var(--brand-500)] px-5 text-sm font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-700)] focus-visible:ring-offset-2 active:bg-[var(--brand-600)]"
           >
             {last ? "Selesai" : "Lanjut"}
           </button>

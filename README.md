@@ -141,3 +141,13 @@ Domain baru **tidak otomatis** masuk daftar authorized domains Firebase
 Auth — harus di-patch manual lewat Identity Toolkit admin API sebelum
 Google Sign-In bekerja di domain barunya (lihat catatan di
 `ai-app-builder/templates/google-sheets-db/README.md`).
+
+## Simulasi di browser sungguhan (`npm run sim`)
+
+`npm run sim` menjalankan aplikasi ASLI di http://localhost:5199/sim dengan Google Sheets/Drive, login Google, dan server
+pembayaran palsu (data hilang bila `reset=1`; tidak menyentuh data siapa pun). Parameter URL: `biz=warung|resto|toko|lainnya`,
+`paid=1`, `nopw=1` (pemilik belum punya password), `tour=1`, `android=1`, `onboard=1`, `signedout=1`, `forbid=1`, `reset=1`.
+
+Skenario otomatis lewat Chrome headless (tanpa dependensi) — jalankan server sim dulu, lalu:
+`node sim/scenario-pages.mjs` (audit tata letak semua halaman, HP + desktop), `scenario-sales.mjs`, `scenario-access.mjs`,
+`scenario-resto.mjs`, `scenario-tour.mjs`, `scenario-firstrun.mjs`, `scenario-misc.mjs`. Screenshot disimpan ke `OUT` (env).
